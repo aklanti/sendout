@@ -32,3 +32,23 @@ pub enum EmailError {
     #[error("invalid recipient: {0}")]
     InvalidRecipient(String),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::EmailError;
+
+    #[test]
+    fn test_email_error_variants() {
+        let config_err = EmailError::ConfigError("missing token".into());
+        assert!(matches!(config_err, EmailError::ConfigError(_)));
+
+        let send_err = EmailError::SendFailed("connection failed".into());
+        assert!(matches!(send_err, EmailError::SendFailed(_)));
+
+        let rate_err = EmailError::RateLimitExceeded;
+        assert!(matches!(rate_err, EmailError::RateLimitExceeded));
+
+        let recipient_err = EmailError::InvalidRecipient("bad@".into());
+        assert!(matches!(recipient_err, EmailError::InvalidRecipient(_)));
+    }
+}
