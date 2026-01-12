@@ -1,7 +1,6 @@
 //! # Sendout
 //!
-//! This crate allows to send out emails using APIs
-
+//! Provides an abstraction over sending emails using APIs
 pub mod config;
 pub mod error;
 
