@@ -15,6 +15,7 @@ features = ["full"]
 
 [features]
 serde = ["dep:serde", "secrecy/serde"]
+test-util = []
 tracing = ["dep:tracing"]
 
 [dependencies]
@@ -23,6 +24,15 @@ secrecy = { version = "0.10", features = ["serde"] }
 serde = { version = "1", optional = true, features = ["derive"] }
 thiserror = "2"
 tracing = { version = "0.1", optional = true }
+
+[dev-dependencies]
+googletest = "0.14.2"
+insta = { version = "1.46.1", features = ["yaml"] }
+tokio = { version = "1.49", features = ["rt-multi-thread", "macros"] }
+
+[profile.dev.package]
+insta.opt-level = 3
+similar.opt-level = 3
 
 [lints.clippy]
 allow_attributes_without_reason = "warn"

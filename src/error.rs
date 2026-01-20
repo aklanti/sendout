@@ -6,8 +6,8 @@ use thiserror::Error;
 ///
 /// It represents all possible failures that can occur when attempting
 /// to send an email via the email service.
-#[derive(Debug, Error)]
-pub enum EmailError {
+#[derive(Debug, Clone, Error)]
+pub enum SendoutError {
     /// Configuration error preventing the email from being sent out
     #[error("email configuration error: {0}")]
     ConfigError(String),
@@ -35,20 +35,20 @@ pub enum EmailError {
 
 #[cfg(test)]
 mod tests {
-    use super::EmailError;
+    use super::SendoutError;
 
     #[test]
     fn test_email_error_variants() {
-        let config_err = EmailError::ConfigError("missing token".into());
-        assert!(matches!(config_err, EmailError::ConfigError(_)));
+        let config_err = SendoutError::ConfigError("missing token".into());
+        assert!(matches!(config_err, SendoutError::ConfigError(_)));
 
-        let send_err = EmailError::SendFailed("connection failed".into());
-        assert!(matches!(send_err, EmailError::SendFailed(_)));
+        let send_err = SendoutError::SendFailed("connection failed".into());
+        assert!(matches!(send_err, SendoutError::SendFailed(_)));
 
-        let rate_err = EmailError::RateLimitExceeded;
-        assert!(matches!(rate_err, EmailError::RateLimitExceeded));
+        let rate_err = SendoutError::RateLimitExceeded;
+        assert!(matches!(rate_err, SendoutError::RateLimitExceeded));
 
-        let recipient_err = EmailError::InvalidRecipient("bad@".into());
-        assert!(matches!(recipient_err, EmailError::InvalidRecipient(_)));
+        let recipient_err = SendoutError::InvalidRecipient("bad@".into());
+        assert!(matches!(recipient_err, SendoutError::InvalidRecipient(_)));
     }
 }

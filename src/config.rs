@@ -2,7 +2,7 @@
 
 use secrecy::SecretString;
 
-use super::error::EmailError;
+use super::error::SendoutError;
 
 /// Configuration for the email sending service
 #[must_use]
@@ -44,21 +44,21 @@ impl EmailConfig {
         feature = "tracing",
         tracing::instrument(name = "EmailConfig::from_env", err(Debug))
     )]
-    pub fn from_env() -> Result<Self, EmailError> {
+    pub fn from_env() -> Result<Self, SendoutError> {
         let base_url = std::env::var(Self::SENDOUT_BASE_URL).map_err(|_err| {
             #[cfg(feature = "tracing")]
             tracing::error!(%_err);
-            EmailError::ConfigError(format!("{} not set", Self::SENDOUT_BASE_URL))
+            SendoutError::ConfigError(format!("{} not set", Self::SENDOUT_BASE_URL))
         })?;
         let api_token = std::env::var(Self::SENDOUT_API_TOKEN).map_err(|_err| {
             #[cfg(feature = "tracing")]
             tracing::error!(%_err);
-            EmailError::ConfigError(format!("{} not set", Self::SENDOUT_API_TOKEN))
+            SendoutError::ConfigError(format!("{} not set", Self::SENDOUT_API_TOKEN))
         })?;
         let from_email = std::env::var(Self::SENDOUT_FROM_EMAIL).map_err(|_err| {
             #[cfg(feature = "tracing")]
             tracing::error!(%_err);
-            EmailError::ConfigError(format!("{} not set", Self::SENDOUT_FROM_EMAIL))
+            SendoutError::ConfigError(format!("{} not set", Self::SENDOUT_FROM_EMAIL))
         })?;
 
         Ok(Self {
