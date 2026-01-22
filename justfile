@@ -45,7 +45,7 @@ alias t := test
 # Run all linters
 @lint: clippy deny hack shear
     cargo sort --grouped --check
-    just --fmt --unstable --check 
+    just --fmt --unstable --check
 
 # Check for unused dependencies
 @shear *args:
@@ -53,5 +53,9 @@ alias t := test
 
 # Run tests
 @test *args:
+    cargo nextest run --all-targets -j 12 {{ args }}
+    cargo nextest run --features postmark --all-targets -j 12 {{ args }}
+    cargo nextest run --features garde --all-targets -j 12 {{ args }}
+    cargo nextest run --features bon --all-targets -j 12 {{ args }}
     cargo nextest run --all-features --all-targets -j 12 {{ args }}
     cargo test --doc

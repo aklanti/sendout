@@ -5,6 +5,7 @@ pub mod config;
 pub mod error;
 #[macro_use]
 pub mod macros;
+pub mod email;
 
 use async_trait::async_trait;
 use serde::Serialize;
