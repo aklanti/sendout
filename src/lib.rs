@@ -7,6 +7,8 @@ pub mod error;
 pub mod macros;
 
 use async_trait::async_trait;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use self::error::SendoutError;
 
@@ -14,9 +16,13 @@ use self::error::SendoutError;
 ///
 /// This trait defines the mechanism for sending emails.
 #[async_trait]
-pub trait Sendout<Email>: Send + Sync {
+pub trait Sendout<Email, Response>: Send + Sync
+where
+    Email: Serialize,
+    Response: DeserializeOwned,
+{
     /// Send an email
-    async fn send(&self, email: Email) -> Result<(), SendoutError>;
+    async fn send(&self, email: Email) -> Result<Response, SendoutError>;
 }
 
 cfg_test_util! {
@@ -34,9 +40,9 @@ cfg_test_util! {
     }
 
     #[async_trait]
-    impl<Email> Sendout<Email> for MockEmailSender<Email>
+    impl<Email> Sendout<Email, ()> for MockEmailSender<Email>
     where
-        Email: Send + Sync,
+        Email: Serialize + Send + Sync,
     {
         async fn send(&self, email: Email) -> Result<(), SendoutError> {
             if let Some(err) = &self.failure_error {
@@ -70,7 +76,7 @@ cfg_test_util! {
 
         /// Creates new `MockEmailSender` that fails with the given error.
         ///
-        /// Any attempt to send an email always return the specified error.
+        /// Any attempt to send an email always returns the specified error.
         pub fn with_error(error: SendoutError) -> Self {
             Self {
                 failure_error: Some(error),

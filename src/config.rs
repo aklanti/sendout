@@ -1,21 +1,26 @@
 //! Email sending configuration data
 
+use std::env::VarError;
+
 use secrecy::SecretString;
 
 use super::error::SendoutError;
 
 /// Configuration for the email sending service
 #[must_use]
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[derive(Debug, serde::Deserialize)]
 pub struct EmailConfig {
     /// API endpoint for the email service
     pub base_url: String,
     /// Secret API token for authentication
     ///
     /// This token is used when making API requests
-    pub api_token: SecretString,
-
+    /// When using Postmark, it corresponds to X-Postmark-Server-Token
+    pub server_token: SecretString,
+    /// Token used for requests that require account level privileges
+    ///
+    /// For Postmark, it corresponds to X-Postmark-Account-Token
+    pub account_token: Option<SecretString>,
     /// The verified sender email address
     ///
     /// This email must be a sender verified by your email service provider
@@ -24,12 +29,14 @@ pub struct EmailConfig {
 }
 
 impl EmailConfig {
-    /// Server API token
-    pub const SENDOUT_API_TOKEN: &str = "SENDOUT_API_TOKEN";
+    /// Account API token
+    pub const SENDOUT_ACCOUNT_TOKEN: &str = "SENDOUT_ACCOUNT_TOKEN";
     /// Email service API
     pub const SENDOUT_BASE_URL: &str = "SENDOUT_BASE_URL";
     /// Sender email address
     pub const SENDOUT_FROM_EMAIL: &str = "SENDOUT_FROM_EMAIL";
+    /// Server API token
+    pub const SENDOUT_SERVER_TOKEN: &str = "SENDOUT_SERVER_TOKEN";
 
     /// Creates [`EmailConfig`] from environment variables
     ///
@@ -50,19 +57,34 @@ impl EmailConfig {
             tracing::error!(%_err);
             SendoutError::ConfigError(format!("{} not set", Self::SENDOUT_BASE_URL))
         })?;
-        let api_token = std::env::var(Self::SENDOUT_API_TOKEN).map_err(|_err| {
-            #[cfg(feature = "tracing")]
-            tracing::error!(%_err);
-            SendoutError::ConfigError(format!("{} not set", Self::SENDOUT_API_TOKEN))
-        })?;
+        let server_token = std::env::var(Self::SENDOUT_SERVER_TOKEN)
+            .map_err(|_err| {
+                #[cfg(feature = "tracing")]
+                tracing::error!(%_err);
+                SendoutError::ConfigError(format!("{} not set", Self::SENDOUT_SERVER_TOKEN))
+            })
+            .map(SecretString::from)?;
         let from_email = std::env::var(Self::SENDOUT_FROM_EMAIL).map_err(|_err| {
             #[cfg(feature = "tracing")]
             tracing::error!(%_err);
             SendoutError::ConfigError(format!("{} not set", Self::SENDOUT_FROM_EMAIL))
         })?;
 
+        let account_token = match std::env::var(Self::SENDOUT_ACCOUNT_TOKEN) {
+            Ok(token) => Some(SecretString::from(token)),
+            Err(VarError::NotPresent) => None,
+            Err(_err) => {
+                #[cfg(feature = "tracing")]
+                tracing::error!(%_err);
+                let error =
+                    SendoutError::ConfigError(format!("{} not set", Self::SENDOUT_ACCOUNT_TOKEN));
+                return Err(error);
+            }
+        };
+
         Ok(Self {
-            api_token: SecretString::from(api_token),
+            account_token,
+            server_token,
             base_url,
             from_email,
         })
@@ -77,12 +99,13 @@ mod tests {
     #[test]
     fn test_email_config() {
         let config = EmailConfig {
-            api_token: SecretString::from(String::from("test-token")),
+            server_token: SecretString::from(String::from("test-token")),
             from_email: "from@test.com".into(),
             base_url: "http://localhost:6666".into(),
+            account_token: Some(SecretString::from(String::from("test-account-token"))),
         };
 
-        assert_eq!(config.api_token.expose_secret(), "test-token");
+        assert_eq!(config.server_token.expose_secret(), "test-token");
         assert_eq!(config.from_email, "from@test.com");
         assert_eq!(config.base_url, "http://localhost:6666");
     }
