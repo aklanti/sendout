@@ -14,8 +14,7 @@ use serde_with::{StringWithSeparator, serde_as};
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "bon", derive(bon::Builder))]
 #[cfg_attr(feature = "garde", derive(Validate))]
-#[cfg_attr(feature = "postmark", serde(rename_all = "PascalCase"))]
-pub struct EmailRequest {
+pub struct EmailMessage {
     /// The sender email address
     #[cfg_attr(feature = "garde", garde(email))]
     pub r#from: String,
@@ -37,26 +36,22 @@ pub struct EmailRequest {
     pub bcc: Option<Recipients>,
     /// Email tag that allows you to categorize outgoing emails
     /// and get detailed statistics
-    #[cfg_attr(
-        all(feature = "garde", feature = "postmark"),
-        garde(length(max = 1000))
-    )]
-    #[cfg_attr(all(feature = "garde", not(feature = "postmark")), garde(skip))]
+    #[cfg_attr(feature = "garde", garde(length(graphemes, min = 1)))]
     pub tag: Option<String>,
     /// Reply To override email address
     #[cfg_attr(feature = "garde", garde(dive))]
     pub rely_to: Option<Recipients>,
     /// List of custom headers to include
-    #[cfg_attr(feature = "garde", garde(skip))]
+    #[cfg_attr(feature = "garde", garde(length(min = 1)))]
     pub headers: Option<Vec<Header>>,
     /// Custom metadata key/value pairs
-    #[cfg_attr(feature = "garde", garde(skip))]
+    #[cfg_attr(feature = "garde", garde(length(min = 1)))]
     pub metadata: Option<HashMap<String, String>>,
     /// List of attachments
     #[cfg_attr(feature = "garde", garde(dive))]
     pub attachments: Option<Vec<Attachment>>,
     /// Set message stream ID that's used for sending
-    #[cfg_attr(feature = "garde", garde(skip))]
+    #[cfg_attr(feature = "garde", garde(length(graphemes, min = 1)))]
     pub message_stream: Option<String>,
 }
 
@@ -64,10 +59,8 @@ pub struct EmailRequest {
 #[derive(Debug, Clone, Serialize)]
 pub enum Body {
     /// Plain text email message
-    #[cfg_attr(feature = "postmark", serde(rename = "TextBody"))]
     Text(String),
     /// HTML email message
-    #[cfg_attr(feature = "postmark", serde(rename = "HtmlBody"))]
     Html(String),
 }
 
@@ -76,10 +69,10 @@ pub enum Body {
 #[cfg_attr(feature = "garde", derive(Validate))]
 pub struct Header {
     /// Name of the header
-    #[cfg_attr(feature = "garde", garde(skip))]
+    #[cfg_attr(feature = "garde", garde(length(graphemes, min = 1)))]
     pub name: String,
     /// Value of the header
-    #[cfg_attr(feature = "garde", garde(skip))]
+    #[cfg_attr(feature = "garde", garde(length(graphemes, min = 1)))]
     pub value: String,
 }
 
@@ -87,23 +80,15 @@ pub struct Header {
 #[serde_as]
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "garde", derive(Validate))]
+#[cfg_attr(feature = "garde", garde(transparent))]
 pub struct Recipients(
-    #[cfg_attr(
-        all(feature = "garde", feature = "postmark"),
-        garde(length(min = 1, max = 50))
-    )]
-    #[cfg_attr(
-        all(feature = "garde", not(feature = "postmark")),
-        garde(length(min = 1))
-    )]
-    #[cfg_attr(feature = "garde", garde(inner(email)))]
+    #[cfg_attr(feature = "garde", garde(length(min = 1), inner(email)))]
     #[serde_as(as = "StringWithSeparator::<CommaSeparator, String>")]
     Vec<String>,
 );
 
 /// An attachment to the email
 #[derive(Debug, Clone, Serialize)]
-#[cfg_attr(feature = "postmark", serde(rename_all = "PascalCase"))]
 #[cfg_attr(feature = "garde", derive(Validate))]
 pub struct Attachment {
     /// Name of the attached file
@@ -125,47 +110,9 @@ mod tests {
 
     use super::*;
 
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "postmark")] {
-            const TEXT_BODY_KEY: &str = "TextBody";
-            const HTML_BODY_KEY: &str = "HtmlBody";
-            const FROM_KEY: &str = "From";
-            const TO_KEY: &str = "To";
-            const SUBJECT_KEY: &str = "Subject";
-            const CC_KEY: &str = "Cc";
-            const BCC_KEY: &str = "Bcc";
-            const TAG_KEY: &str = "Tag";
-            const RELY_TO_KEY: &str = "RelyTo";
-            const HEADERS_KEY: &str = "Headers";
-            const METADATA_KEY: &str = "Metadata";
-            const ATTACHMENTS_KEY: &str = "Attachments";
-            const MESSAGE_STREAM_KEY: &str = "MessageStream";
-            const NAME_KEY: &str = "Name";
-            const CONTENT_KEY: &str = "Content";
-            const CONTENT_TYPE_KEY: &str = "ContentType";
-        } else {
-            const TEXT_BODY_KEY: &str = "Text";
-            const HTML_BODY_KEY: &str = "Html";
-            const FROM_KEY: &str = "from";
-            const TO_KEY: &str = "to";
-            const SUBJECT_KEY: &str = "subject";
-            const CC_KEY: &str = "cc";
-            const BCC_KEY: &str = "bcc";
-            const TAG_KEY: &str = "tag";
-            const RELY_TO_KEY: &str = "rely_to";
-            const HEADERS_KEY: &str = "headers";
-            const METADATA_KEY: &str = "metadata";
-            const ATTACHMENTS_KEY: &str = "attachments";
-            const MESSAGE_STREAM_KEY: &str = "message_stream";
-            const NAME_KEY: &str = "name";
-            const CONTENT_KEY: &str = "content";
-            const CONTENT_TYPE_KEY: &str = "content_type";
-        }
-    }
-
     #[gtest]
     fn test_email_request_serializes_required_fields() {
-        let request = EmailRequest {
+        let request = EmailMessage {
             r#from: "wangari.maathai@example.africa".to_owned(),
             to: Recipients(vec!["kwame.nkrumah@example.africa".to_owned()]),
             subject: "Green Belt Movement Monthly Update".to_owned(),
@@ -183,26 +130,26 @@ mod tests {
         let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
 
         expect_that!(
-            json.get(FROM_KEY).and_then(|v| v.as_str()),
+            json.get("from").and_then(|v| v.as_str()),
             some(eq("wangari.maathai@example.africa"))
         );
         expect_that!(
-            json.get(TO_KEY).and_then(|v| v.as_str()),
+            json.get("to").and_then(|v| v.as_str()),
             some(eq("kwame.nkrumah@example.africa"))
         );
         expect_that!(
-            json.get(SUBJECT_KEY).and_then(|v| v.as_str()),
+            json.get("subject").and_then(|v| v.as_str()),
             some(eq("Green Belt Movement Monthly Update"))
         );
         expect_that!(
-            json.get(TEXT_BODY_KEY).and_then(|v| v.as_str()),
+            json.get("Text").and_then(|v| v.as_str()),
             some(eq("We planted 10,000 trees across Kenya this month."))
         );
     }
 
     #[gtest]
     fn test_email_request_omits_none_optional_fields() {
-        let request = EmailRequest {
+        let request = EmailMessage {
             r#from: "thomas.sankara@example.africa".to_owned(),
             to: Recipients(vec!["patrice.lumumba@example.africa".to_owned()]),
             subject: "Self-Sufficiency Progress Report".to_owned(),
@@ -219,14 +166,14 @@ mod tests {
 
         let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
 
-        expect_that!(json.get(CC_KEY), none());
-        expect_that!(json.get(BCC_KEY), none());
-        expect_that!(json.get(TAG_KEY), none());
-        expect_that!(json.get(RELY_TO_KEY), none());
-        expect_that!(json.get(HEADERS_KEY), none());
-        expect_that!(json.get(METADATA_KEY), none());
-        expect_that!(json.get(ATTACHMENTS_KEY), none());
-        expect_that!(json.get(MESSAGE_STREAM_KEY), none());
+        expect_that!(json.get("cc"), none());
+        expect_that!(json.get("bcc"), none());
+        expect_that!(json.get("tag"), none());
+        expect_that!(json.get("rely_to"), none());
+        expect_that!(json.get("headers"), none());
+        expect_that!(json.get("metadata"), none());
+        expect_that!(json.get("attachments"), none());
+        expect_that!(json.get("message_stream"), none());
     }
 
     #[gtest]
@@ -234,7 +181,7 @@ mod tests {
         let mut metadata = HashMap::new();
         metadata.insert("literary_genre".to_owned(), "african-fiction".to_owned());
 
-        let request = EmailRequest {
+        let request = EmailMessage {
             r#from: "chimamanda.adichie@example.africa".to_owned(),
             to: Recipients(vec!["yaa.asantewaa@example.africa".to_owned()]),
             subject: "New Novel Draft Ready for Review".to_owned(),
@@ -258,48 +205,48 @@ mod tests {
 
         let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
         expect_that!(
-            json.get(CC_KEY).and_then(|v| v.as_str()),
+            json.get("cc").and_then(|v| v.as_str()),
             some(eq("steve.biko@example.africa"))
         );
         expect_that!(
-            json.get(BCC_KEY).and_then(|v| v.as_str()),
+            json.get("bcc").and_then(|v| v.as_str()),
             some(eq("miriam.makeba@example.africa"))
         );
         expect_that!(
-            json.get(TAG_KEY).and_then(|v| v.as_str()),
+            json.get("tag").and_then(|v| v.as_str()),
             some(eq("african-literature"))
         );
         expect_that!(
-            json.get(RELY_TO_KEY).and_then(|v| v.as_str()),
+            json.get("rely_to").and_then(|v| v.as_str()),
             some(eq("gbehanzin@example.africa"))
         );
         expect_that!(
-            json.get(HEADERS_KEY)
+            json.get("headers")
                 .and_then(|v| v.as_array())
                 .map(|a| a.len()),
             some(eq(1))
         );
         expect_that!(
-            json.get(METADATA_KEY)
+            json.get("metadata")
                 .and_then(|v| v.get("literary_genre"))
                 .and_then(|v| v.as_str()),
             some(eq("african-fiction"))
         );
         expect_that!(
-            json.get(ATTACHMENTS_KEY)
+            json.get("attachments")
                 .and_then(|v| v.as_array())
                 .map(|a| a.len()),
             some(eq(1))
         );
         expect_that!(
-            json.get(MESSAGE_STREAM_KEY).and_then(|v| v.as_str()),
+            json.get("message_stream").and_then(|v| v.as_str()),
             some(eq("literary-submissions"))
         );
     }
 
     #[gtest]
     fn test_email_request_body_flattens_correctly() {
-        let request = EmailRequest {
+        let request = EmailMessage {
             r#from: "patrice.lumumba@example.africa".to_owned(),
             to: Recipients(vec!["wangari.maathai@example.africa".to_owned()]),
             subject: "Unity for Congo's Future".to_owned(),
@@ -318,7 +265,7 @@ mod tests {
 
         expect_that!(json.get("body"), none());
         expect_that!(
-            json.get(TEXT_BODY_KEY).and_then(|v| v.as_str()),
+            json.get("Text").and_then(|v| v.as_str()),
             some(eq("Together we shall build a sovereign nation."))
         );
     }
@@ -329,10 +276,10 @@ mod tests {
         let json: Value = serde_json::to_value(&body).expect("serialization to succeed");
 
         expect_that!(
-            json.get(TEXT_BODY_KEY).and_then(|v| v.as_str()),
+            json.get("Text").and_then(|v| v.as_str()),
             some(eq("The Green Belt Movement has planted one million trees."))
         );
-        expect_that!(json.get(HTML_BODY_KEY), none());
+        expect_that!(json.get("Html"), none());
     }
 
     #[gtest]
@@ -341,10 +288,10 @@ mod tests {
         let json: Value = serde_json::to_value(&body).expect("serialization to succeed");
 
         expect_that!(
-            json.get(HTML_BODY_KEY).and_then(|v| v.as_str()),
+            json.get("Html").and_then(|v| v.as_str()),
             some(eq("<h1>Pan-African Unity Conference</h1>"))
         );
-        expect_that!(json.get(TEXT_BODY_KEY), none());
+        expect_that!(json.get("Text"), none());
     }
 
     #[gtest]
@@ -401,69 +348,19 @@ mod tests {
         let json: Value = serde_json::to_value(&attachment).expect("serialization to succeed");
 
         expect_that!(
-            json.get(NAME_KEY).and_then(|v| v.as_str()),
+            json.get("name").and_then(|v| v.as_str()),
             some(eq("reforestation-report.xlsx"))
         );
         expect_that!(
-            json.get(CONTENT_KEY).and_then(|v| v.as_str()),
+            json.get("content").and_then(|v| v.as_str()),
             some(eq("UEsDBBQAAAAIAA=="))
         );
         expect_that!(
-            json.get(CONTENT_TYPE_KEY).and_then(|v| v.as_str()),
+            json.get("content_type").and_then(|v| v.as_str()),
             some(eq(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             ))
         );
-    }
-
-    #[cfg(feature = "postmark")]
-    mod postmark_tests {
-        use super::*;
-
-        #[gtest]
-        fn test_email_postmark_pascal_case_serialization() {
-            let request = EmailRequest {
-                r#from: "kwame.nkrumah@example.africa".to_owned(),
-                to: Recipients(vec!["yaa.asantewaa@example.africa".to_owned()]),
-                subject: "Pan-African Congress Invitation".to_owned(),
-                body: Body::Text("Africa must unite for true independence.".to_owned()),
-                cc: Some(Recipients(vec!["steve.biko@example.africa".to_owned()])),
-                bcc: None,
-                tag: Some("pan-african-congress".to_owned()),
-                rely_to: None,
-                headers: None,
-                metadata: None,
-                attachments: None,
-                message_stream: Some("independence-movement".to_owned()),
-            };
-
-            let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
-
-            expect_that!(
-                json.get("From").and_then(|v| v.as_str()),
-                some(eq("kwame.nkrumah@example.africa"))
-            );
-            expect_that!(
-                json.get("To").and_then(|v| v.as_str()),
-                some(eq("yaa.asantewaa@example.africa"))
-            );
-            expect_that!(
-                json.get("Subject").and_then(|v| v.as_str()),
-                some(eq("Pan-African Congress Invitation"))
-            );
-            expect_that!(
-                json.get("Cc").and_then(|v| v.as_str()),
-                some(eq("steve.biko@example.africa"))
-            );
-            expect_that!(
-                json.get("Tag").and_then(|v| v.as_str()),
-                some(eq("pan-african-congress"))
-            );
-            expect_that!(
-                json.get("MessageStream").and_then(|v| v.as_str()),
-                some(eq("independence-movement"))
-            );
-        }
     }
 
     #[cfg(feature = "garde")]
@@ -475,7 +372,7 @@ mod tests {
 
         #[gtest]
         fn test_email_request_valid_from_email() {
-            let request = EmailRequest {
+            let request = EmailMessage {
                 r#from: "wangari.maathai@example.africa".to_owned(),
                 to: Recipients(vec!["patrice.lumumba@example.africa".to_owned()]),
                 subject: "Environmental Restoration Initiative".to_owned(),
@@ -497,7 +394,7 @@ mod tests {
 
         #[gtest]
         fn test_email_request_invalid_from_email_fails() {
-            let request = EmailRequest {
+            let request = EmailMessage {
                 r#from: "this-is-not-an-email-address".to_owned(),
                 to: Recipients(vec!["thomas.sankara@example.africa".to_owned()]),
                 subject: "Revolutionary Economic Reforms".to_owned(),
@@ -517,7 +414,7 @@ mod tests {
 
         #[gtest]
         fn test_email_request_validates_nested_to_recipients() {
-            let request = EmailRequest {
+            let request = EmailMessage {
                 r#from: "chimamanda.adichie@example.africa".to_owned(),
                 to: Recipients(vec!["broken-recipient-format".to_owned()]),
                 subject: "The Danger of a Single Story".to_owned(),
@@ -546,75 +443,6 @@ mod tests {
             let recipients = Recipients(vec!["completely-invalid".to_owned()]);
             expect_that!(recipients.validate(), err(anything()));
         }
-
-        #[cfg(feature = "postmark")]
-        mod postmark_validation_tests {
-            use super::*;
-
-            #[gtest]
-            fn test_email_request_tag_max_length_1000_postmark() {
-                let long_tag = "x".repeat(1001);
-                let request = EmailRequest {
-                    r#from: "miriam.makeba@example.africa".to_owned(),
-                    to: Recipients(vec!["gbehanzin@example.africa".to_owned()]),
-                    subject: "Mama Africa World Tour Dates".to_owned(),
-                    body: Body::Text(
-                        "Music carries the voice of our people across oceans.".to_owned(),
-                    ),
-                    cc: None,
-                    bcc: None,
-                    tag: Some(long_tag),
-                    rely_to: None,
-                    headers: None,
-                    metadata: None,
-                    attachments: None,
-                    message_stream: None,
-                };
-
-                expect_that!(request.validate(), err(anything()));
-            }
-
-            #[gtest]
-            fn test_email_request_tag_at_max_length_1000_passes() {
-                let max_tag = "y".repeat(1000);
-                let request = EmailRequest {
-                    r#from: "wangari.maathai@example.africa".to_owned(),
-                    to: Recipients(vec!["thomas.sankara@example.africa".to_owned()]),
-                    subject: "Reforestation Partnership Proposal".to_owned(),
-                    body: Body::Text(
-                        "Let us combine our efforts to restore Africa's forests.".to_owned(),
-                    ),
-                    cc: None,
-                    bcc: None,
-                    tag: Some(max_tag),
-                    rely_to: None,
-                    headers: None,
-                    metadata: None,
-                    attachments: None,
-                    message_stream: None,
-                };
-
-                expect_that!(request.validate(), ok(anything()));
-            }
-
-            #[gtest]
-            fn test_recipients_max_50_postmark() {
-                let emails: Vec<String> = (1..=50)
-                    .map(|count| format!("member{count}@example.africa"))
-                    .collect();
-                let recipients = Recipients(emails);
-                expect_that!(recipients.validate(), ok(anything()));
-            }
-
-            #[gtest]
-            fn test_recipients_exceeds_50_postmark_fails() {
-                let emails: Vec<String> = (1..=51)
-                    .map(|count| format!("overflow{count}@example.africa"))
-                    .collect();
-                let recipients = Recipients(emails);
-                expect_that!(recipients.validate(), err(anything()));
-            }
-        }
     }
 
     #[cfg(feature = "bon")]
@@ -623,7 +451,7 @@ mod tests {
 
         #[gtest]
         fn test_email_request_builder_with_required_fields() {
-            let request = EmailRequest::builder()
+            let request = EmailMessage::builder()
                 .r#from("patrice.lumumba@example.africa".to_owned())
                 .to(Recipients(vec!["kwame.nkrumah@example.africa".to_owned()]))
                 .subject("Congo's Path to Sovereignty".to_owned())
@@ -647,7 +475,7 @@ mod tests {
             let mut metadata = HashMap::new();
             metadata.insert("heritage".to_owned(), "ashanti-kingdom".to_owned());
 
-            let request = EmailRequest::builder()
+            let request = EmailMessage::builder()
                 .r#from("chimamanda.adichie@example.africa".to_owned())
                 .to(Recipients(vec!["yaa.asantewaa@example.africa".to_owned()]))
                 .subject("Celebrating African Women in Literature".to_owned())

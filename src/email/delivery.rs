@@ -5,7 +5,7 @@ use serde::Deserialize;
 /// Sent email response
 #[derive(Debug, Clone, Deserialize)]
 #[cfg_attr(feature = "postmark", serde(rename_all = "PascalCase"))]
-pub struct EmailResponse {
+pub struct EmailDelivery {
     /// Recipient email address
     pub to: String,
     /// Submission timestamp
@@ -86,7 +86,7 @@ mod tests {
             "Pan-African unity message delivered to Ghana",
         );
 
-        let response: EmailResponse =
+        let response: EmailDelivery =
             serde_json::from_str(&json).expect("deserialization to succeed");
 
         expect_that!(response.to, eq("kwame.nkrumah@example.africa"));
@@ -108,7 +108,7 @@ mod tests {
             "Congo independence communique incomplete",
         );
 
-        let result: std::result::Result<EmailResponse, serde_json::Error> =
+        let result: std::result::Result<EmailDelivery, serde_json::Error> =
             serde_json::from_str(&json);
 
         expect_that!(result, err(anything()));
