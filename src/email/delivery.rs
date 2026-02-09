@@ -1,17 +1,19 @@
 //! Email sent responses data structures
 
+use bytes::Bytes;
+use http::Response;
 use serde::Deserialize;
+
+use crate::error::SendoutError;
 
 /// Sent email response
 #[derive(Debug, Clone, Deserialize)]
-#[cfg_attr(feature = "postmark", serde(rename_all = "PascalCase"))]
 pub struct EmailDelivery {
     /// Recipient email address
     pub to: String,
     /// Submission timestamp
     pub submitted_at: String,
     /// ID of message
-    #[cfg_attr(feature = "postmark", serde(rename = "MessageID"))]
     pub message_id: String,
     /// API error codes
     pub error_code: u16,
@@ -19,6 +21,21 @@ pub struct EmailDelivery {
     pub message: String,
 }
 
+impl TryFrom<Response<Bytes>> for EmailDelivery {
+    type Error = SendoutError;
+
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Response::try_from", err(Debug))
+    )]
+    fn try_from(response: Response<Bytes>) -> Result<Self, Self::Error> {
+        serde_json::from_slice(response.body()).map_err(|err| {
+            #[cfg(feature = "tracing")]
+            tracing::error!(?err);
+            SendoutError::SendFailed(err.to_string())
+        })
+    }
+}
 #[cfg(test)]
 mod tests {
     use googletest::matchers::{anything, eq, err};
@@ -26,20 +43,6 @@ mod tests {
 
     use super::*;
 
-    #[cfg(feature = "postmark")]
-    fn make_json(
-        to: &str,
-        submitted_at: &str,
-        message_id: &str,
-        error_code: u16,
-        message: &str,
-    ) -> String {
-        format!(
-            r#"{{"To": "{to}", "SubmittedAt": "{submitted_at}", "MessageID": "{message_id}", "ErrorCode": {error_code}, "Message": "{message}"}}"#
-        )
-    }
-
-    #[cfg(not(feature = "postmark"))]
     fn make_json(
         to: &str,
         submitted_at: &str,
@@ -61,18 +64,6 @@ mod tests {
     ) -> String {
         format!(
             r#"{{"To": "{to}", "SubmittedAt": "{submitted_at}", "ErrorCode": {error_code}, "Message": "{message}"}}"#
-        )
-    }
-
-    #[cfg(not(feature = "postmark"))]
-    fn make_json_without_message_id(
-        to: &str,
-        submitted_at: &str,
-        error_code: u16,
-        message: &str,
-    ) -> String {
-        format!(
-            r#"{{"to": "{to}", "submitted_at": "{submitted_at}", "error_code": {error_code}, "message": "{message}"}}"#
         )
     }
 
