@@ -97,7 +97,7 @@ mod tests {
     use secrecy::{ExposeSecret, SecretString};
 
     #[test]
-    fn test_email_config() {
+    fn email_config() {
         let config = EmailConfig {
             server_token: SecretString::from(String::from("test-token")),
             from_email: "from@test.com".into(),

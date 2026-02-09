@@ -38,7 +38,7 @@ mod tests {
     use super::SendoutError;
 
     #[test]
-    fn test_email_error_variants() {
+    fn email_error_variants() {
         let config_err = SendoutError::ConfigError("missing token".into());
         assert!(matches!(config_err, SendoutError::ConfigError(_)));
 

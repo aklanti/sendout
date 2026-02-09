@@ -5,8 +5,8 @@ pub mod config;
 pub mod error;
 #[macro_use]
 pub mod macros;
+pub mod api;
 pub mod email;
-
 use async_trait::async_trait;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -110,7 +110,7 @@ cfg_test! {
 
         #[tokio::test]
         #[gtest]
-        async fn test_send_email_successfully() {
+        async fn send_email_successfully() {
             let sender = MockEmailSender::new();
             let res = sender.send("hi").await;
             expect_that!(res, ok(anything()));
@@ -120,7 +120,7 @@ cfg_test! {
 
         #[tokio::test]
         #[gtest]
-        async fn test_send_email_fails() {
+        async fn send_email_fails() {
             let sender = MockEmailSender::with_error(SendoutError::SendFailed("test error".into()));
             let res = sender.send("hi").await;
             expect_that!(res, err(anything()));

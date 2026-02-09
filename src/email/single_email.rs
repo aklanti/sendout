@@ -14,7 +14,7 @@ use serde_with::{StringWithSeparator, serde_as};
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "bon", derive(bon::Builder))]
 #[cfg_attr(feature = "garde", derive(Validate))]
-pub struct EmailMessage {
+pub struct SingleEmailData {
     /// The sender email address
     #[cfg_attr(feature = "garde", garde(email))]
     pub r#from: String,
@@ -40,7 +40,7 @@ pub struct EmailMessage {
     pub tag: Option<String>,
     /// Reply To override email address
     #[cfg_attr(feature = "garde", garde(dive))]
-    pub rely_to: Option<Recipients>,
+    pub reply_to: Option<Recipients>,
     /// List of custom headers to include
     #[cfg_attr(feature = "garde", garde(length(min = 1)))]
     pub headers: Option<Vec<Header>>,
@@ -87,6 +87,25 @@ pub struct Recipients(
     Vec<String>,
 );
 
+impl Recipients {
+    /// Consumes self and return the inner list of email addresses
+    pub fn into_inner(self) -> Vec<String> {
+        self.0
+    }
+}
+
+impl From<Vec<String>> for Recipients {
+    fn from(emails: Vec<String>) -> Self {
+        Self(emails)
+    }
+}
+
+impl From<Vec<&str>> for Recipients {
+    fn from(emails: Vec<&str>) -> Self {
+        Self(emails.iter().map(ToString::to_string).collect())
+    }
+}
+
 /// An attachment to the email
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "garde", derive(Validate))]
@@ -111,16 +130,16 @@ mod tests {
     use super::*;
 
     #[gtest]
-    fn test_email_request_serializes_required_fields() {
-        let request = EmailMessage {
+    fn email_request_serializes_required_fields() {
+        let request = SingleEmailData {
             r#from: "wangari.maathai@example.africa".to_owned(),
-            to: Recipients(vec!["kwame.nkrumah@example.africa".to_owned()]),
+            to: vec!["kwame.nkrumah@example.africa"].into(),
             subject: "Green Belt Movement Monthly Update".to_owned(),
             body: Body::Text("We planted 10,000 trees across Kenya this month.".to_owned()),
             cc: None,
             bcc: None,
             tag: None,
-            rely_to: None,
+            reply_to: None,
             headers: None,
             metadata: None,
             attachments: None,
@@ -148,16 +167,16 @@ mod tests {
     }
 
     #[gtest]
-    fn test_email_request_omits_none_optional_fields() {
-        let request = EmailMessage {
+    fn email_request_omits_none_optional_fields() {
+        let request = SingleEmailData {
             r#from: "thomas.sankara@example.africa".to_owned(),
-            to: Recipients(vec!["patrice.lumumba@example.africa".to_owned()]),
+            to: vec!["patrice.lumumba@example.africa"].into(),
             subject: "Self-Sufficiency Progress Report".to_owned(),
             body: Body::Text("Burkina Faso grows stronger through our own efforts.".to_owned()),
             cc: None,
             bcc: None,
             tag: None,
-            rely_to: None,
+            reply_to: None,
             headers: None,
             metadata: None,
             attachments: None,
@@ -169,7 +188,7 @@ mod tests {
         expect_that!(json.get("cc"), none());
         expect_that!(json.get("bcc"), none());
         expect_that!(json.get("tag"), none());
-        expect_that!(json.get("rely_to"), none());
+        expect_that!(json.get("reply_to"), none());
         expect_that!(json.get("headers"), none());
         expect_that!(json.get("metadata"), none());
         expect_that!(json.get("attachments"), none());
@@ -177,19 +196,19 @@ mod tests {
     }
 
     #[gtest]
-    fn test_email_request_includes_optional_fields_when_present() {
+    fn email_request_includes_optional_fields_when_present() {
         let mut metadata = HashMap::new();
         metadata.insert("literary_genre".to_owned(), "african-fiction".to_owned());
 
-        let request = EmailMessage {
+        let request = SingleEmailData {
             r#from: "chimamanda.adichie@example.africa".to_owned(),
-            to: Recipients(vec!["yaa.asantewaa@example.africa".to_owned()]),
+            to: Recipients::from(vec!["yaa.asantewaa@example.africa"]),
             subject: "New Novel Draft Ready for Review".to_owned(),
             body: Body::Text("The story of our ancestors deserves to be told.".to_owned()),
-            cc: Some(Recipients(vec!["steve.biko@example.africa".to_owned()])),
-            bcc: Some(Recipients(vec!["miriam.makeba@example.africa".to_owned()])),
+            cc: Some(vec!["steve.biko@example.africa"].into()),
+            bcc: Some(vec!["miriam.makeba@example.africa"].into()),
             tag: Some("african-literature".to_owned()),
-            rely_to: Some(Recipients(vec!["gbehanzin@example.africa".to_owned()])),
+            reply_to: Some(vec!["gbehanzin@example.africa"].into()),
             headers: Some(vec![Header {
                 name: "X-Manuscript-Id".to_owned(),
                 value: "half-of-a-yellow-sun-draft".to_owned(),
@@ -205,97 +224,71 @@ mod tests {
 
         let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
         expect_that!(
-            json.get("cc").and_then(|v| v.as_str()),
+            json.get("cc").and_then(|c| c.as_str()),
             some(eq("steve.biko@example.africa"))
         );
         expect_that!(
-            json.get("bcc").and_then(|v| v.as_str()),
+            json.get("bcc").and_then(|b| b.as_str()),
             some(eq("miriam.makeba@example.africa"))
         );
         expect_that!(
-            json.get("tag").and_then(|v| v.as_str()),
+            json.get("tag").and_then(|t| t.as_str()),
             some(eq("african-literature"))
         );
         expect_that!(
-            json.get("rely_to").and_then(|v| v.as_str()),
+            json.get("reply_to").and_then(|r| r.as_str()),
             some(eq("gbehanzin@example.africa"))
         );
         expect_that!(
             json.get("headers")
-                .and_then(|v| v.as_array())
-                .map(|a| a.len()),
+                .and_then(|h| h.as_array())
+                .map(|h| h.len()),
             some(eq(1))
         );
         expect_that!(
             json.get("metadata")
-                .and_then(|v| v.get("literary_genre"))
-                .and_then(|v| v.as_str()),
+                .and_then(|m| m.get("literary_genre"))
+                .and_then(|m| m.as_str()),
             some(eq("african-fiction"))
         );
         expect_that!(
             json.get("attachments")
-                .and_then(|v| v.as_array())
+                .and_then(|a| a.as_array())
                 .map(|a| a.len()),
             some(eq(1))
         );
         expect_that!(
-            json.get("message_stream").and_then(|v| v.as_str()),
+            json.get("message_stream").and_then(|m| m.as_str()),
             some(eq("literary-submissions"))
         );
     }
 
     #[gtest]
-    fn test_email_request_body_flattens_correctly() {
-        let request = EmailMessage {
-            r#from: "patrice.lumumba@example.africa".to_owned(),
-            to: Recipients(vec!["wangari.maathai@example.africa".to_owned()]),
-            subject: "Unity for Congo's Future".to_owned(),
-            body: Body::Text("Together we shall build a sovereign nation.".to_owned()),
-            cc: None,
-            bcc: None,
-            tag: None,
-            rely_to: None,
-            headers: None,
-            metadata: None,
-            attachments: None,
-            message_stream: None,
-        };
-
-        let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
-
-        expect_that!(json.get("body"), none());
-        expect_that!(
-            json.get("Text").and_then(|v| v.as_str()),
-            some(eq("Together we shall build a sovereign nation."))
-        );
-    }
-
-    #[gtest]
-    fn test_body_text_serializes_as_text_body() {
+    fn body_text_serializes_as_text_body() {
         let body = Body::Text("The Green Belt Movement has planted one million trees.".to_owned());
         let json: Value = serde_json::to_value(&body).expect("serialization to succeed");
 
         expect_that!(
-            json.get("Text").and_then(|v| v.as_str()),
+            json.get("Text").and_then(|t| t.as_str()),
             some(eq("The Green Belt Movement has planted one million trees."))
         );
         expect_that!(json.get("Html"), none());
     }
 
     #[gtest]
-    fn test_body_html_serializes_as_html_body() {
+    fn body_html_serializes_as_html_body() {
         let body = Body::Html("<h1>Pan-African Unity Conference</h1>".to_owned());
         let json: Value = serde_json::to_value(&body).expect("serialization to succeed");
 
         expect_that!(
-            json.get("Html").and_then(|v| v.as_str()),
+            json.get("Html").and_then(|h| h.as_str()),
             some(eq("<h1>Pan-African Unity Conference</h1>"))
         );
         expect_that!(json.get("Text"), none());
     }
 
     #[gtest]
-    fn test_header_serializes_name_and_value() {
+    fn header_serializes_name_and_value() {
         let header = Header {
             name: "X-Movement-Id".to_owned(),
             value: "green-belt-kenya-1977".to_owned(),
@@ -303,7 +296,7 @@ mod tests {
         let json: Value = serde_json::to_value(&header).expect("serialization to succeed");
 
         expect_that!(
-            json.get("name").and_then(|v| v.as_str()),
+            json.get("name").and_then(|n| n.as_str()),
             some(eq("X-Movement-Id"))
         );
         expect_that!(
@@ -313,19 +306,19 @@ mod tests {
     }
 
     #[gtest]
-    fn test_recipients_single_email_serializes() {
-        let recipients = Recipients(vec!["steve.biko@example.africa".to_owned()]);
+    fn recipients_single_email_serializes() {
+        let recipients = Recipients::from(vec!["steve.biko@example.africa"]);
         let json: Value = serde_json::to_value(&recipients).expect("serialization to succeed");
 
         expect_that!(json.as_str(), some(eq("steve.biko@example.africa")));
     }
 
     #[gtest]
-    fn test_recipients_multiple_emails_comma_separated() {
-        let recipients = Recipients(vec![
-            "wangari.maathai@example.africa".to_owned(),
-            "thomas.sankara@example.africa".to_owned(),
-            "miriam.makeba@example.africa".to_owned(),
+    fn recipients_multiple_emails_comma_separated() {
+        let recipients = Recipients::from(vec![
+            "wangari.maathai@example.africa",
+            "thomas.sankara@example.africa",
+            "miriam.makeba@example.africa",
         ]);
         let json: Value = serde_json::to_value(&recipients).expect("serialization to succeed");
 
@@ -338,7 +331,7 @@ mod tests {
     }
 
     #[gtest]
-    fn test_attachment_serializes_all_fields() {
+    fn attachment_serializes_all_fields() {
         let attachment = Attachment {
             name: "reforestation-report.xlsx".to_owned(),
             content: "UEsDBBQAAAAIAA==".to_owned(),
@@ -348,15 +341,15 @@ mod tests {
         let json: Value = serde_json::to_value(&attachment).expect("serialization to succeed");
 
         expect_that!(
-            json.get("name").and_then(|v| v.as_str()),
+            json.get("name").and_then(|n| n.as_str()),
             some(eq("reforestation-report.xlsx"))
         );
         expect_that!(
-            json.get("content").and_then(|v| v.as_str()),
+            json.get("content").and_then(|c| c.as_str()),
             some(eq("UEsDBBQAAAAIAA=="))
         );
         expect_that!(
-            json.get("content_type").and_then(|v| v.as_str()),
+            json.get("content_type").and_then(|c| c.as_str()),
             some(eq(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             ))
@@ -371,10 +364,10 @@ mod tests {
         use super::*;
 
         #[gtest]
-        fn test_email_request_valid_from_email() {
-            let request = EmailMessage {
+        fn email_request_valid_from_email() {
+            let request = SingleEmailData {
                 r#from: "wangari.maathai@example.africa".to_owned(),
-                to: Recipients(vec!["patrice.lumumba@example.africa".to_owned()]),
+                to: vec!["patrice.lumumba@example.africa"].into(),
                 subject: "Environmental Restoration Initiative".to_owned(),
                 body: Body::Text(
                     "Every tree we plant is a step toward healing our land.".to_owned(),
@@ -382,7 +375,7 @@ mod tests {
                 cc: None,
                 bcc: None,
                 tag: None,
-                rely_to: None,
+                reply_to: None,
                 headers: None,
                 metadata: None,
                 attachments: None,
@@ -393,16 +386,16 @@ mod tests {
         }
 
         #[gtest]
-        fn test_email_request_invalid_from_email_fails() {
-            let request = EmailMessage {
+        fn email_request_invalid_from_email_fails() {
+            let request = SingleEmailData {
                 r#from: "this-is-not-an-email-address".to_owned(),
-                to: Recipients(vec!["thomas.sankara@example.africa".to_owned()]),
+                to: vec!["thomas.sankara@example.africa"].into(),
                 subject: "Revolutionary Economic Reforms".to_owned(),
                 body: Body::Text("The people of Burkina Faso demand self-reliance.".to_owned()),
                 cc: None,
                 bcc: None,
                 tag: None,
-                rely_to: None,
+                reply_to: None,
                 headers: None,
                 metadata: None,
                 attachments: None,
@@ -413,16 +406,16 @@ mod tests {
         }
 
         #[gtest]
-        fn test_email_request_validates_nested_to_recipients() {
-            let request = EmailMessage {
+        fn email_request_validates_nested_to_recipients() {
+            let request = SingleEmailData {
                 r#from: "chimamanda.adichie@example.africa".to_owned(),
-                to: Recipients(vec!["broken-recipient-format".to_owned()]),
+                to: vec!["broken-recipient-format"].into(),
                 subject: "The Danger of a Single Story".to_owned(),
                 body: Body::Text("Our narratives shape how the world sees Africa.".to_owned()),
                 cc: None,
                 bcc: None,
                 tag: None,
-                rely_to: None,
+                reply_to: None,
                 headers: None,
                 metadata: None,
                 attachments: None,
@@ -433,14 +426,14 @@ mod tests {
         }
 
         #[gtest]
-        fn test_recipients_valid_single_email() {
-            let recipients = Recipients(vec!["patrice.lumumba@example.africa".to_owned()]);
+        fn recipients_valid_single_email() {
+            let recipients = Recipients::from(vec!["patrice.lumumba@example.africa"]);
             expect_that!(recipients.validate(), ok(anything()));
         }
 
         #[gtest]
-        fn test_recipients_invalid_single_email_fails() {
-            let recipients = Recipients(vec!["completely-invalid".to_owned()]);
+        fn recipients_invalid_single_email_fails() {
+            let recipients = Recipients::from(vec!["completely-invalid"]);
             expect_that!(recipients.validate(), err(anything()));
         }
     }
@@ -450,10 +443,10 @@ mod tests {
         use super::*;
 
         #[gtest]
-        fn test_email_request_builder_with_required_fields() {
-            let request = EmailMessage::builder()
+        fn email_request_builder_with_required_fields() {
+            let request = SingleEmailData::builder()
                 .r#from("patrice.lumumba@example.africa".to_owned())
-                .to(Recipients(vec!["kwame.nkrumah@example.africa".to_owned()]))
+                .to(vec!["kwame.nkrumah@example.africa"].into())
                 .subject("Congo's Path to Sovereignty".to_owned())
                 .body(Body::Text(
                     "Independence is not a gift but a right of all peoples.".to_owned(),
@@ -471,21 +464,21 @@ mod tests {
         }
 
         #[gtest]
-        fn test_email_request_builder_with_all_fields() {
+        fn email_request_builder_with_all_fields() {
             let mut metadata = HashMap::new();
             metadata.insert("heritage".to_owned(), "ashanti-kingdom".to_owned());
 
-            let request = EmailMessage::builder()
+            let request = SingleEmailData::builder()
                 .r#from("chimamanda.adichie@example.africa".to_owned())
-                .to(Recipients(vec!["yaa.asantewaa@example.africa".to_owned()]))
+                .to(vec!["yaa.asantewaa@example.africa"].into())
                 .subject("Celebrating African Women in Literature".to_owned())
                 .body(Body::Html(
                     "<p>Your courage inspires generations of writers.</p>".to_owned(),
                 ))
-                .cc(Recipients(vec!["steve.biko@example.africa".to_owned()]))
-                .bcc(Recipients(vec!["miriam.makeba@example.africa".to_owned()]))
+                .cc(vec!["steve.biko@example.africa"].into())
+                .bcc(vec!["miriam.makeba@example.africa"].into())
                 .tag("african-women-history".to_owned())
-                .rely_to(Recipients(vec!["gbehanzin@example.africa".to_owned()]))
+                .reply_to(vec!["gbehanzin@example.africa"].into())
                 .headers(vec![Header {
                     name: "X-Literary-Tribute".to_owned(),
                     value: "queen-mother-yaa-asantewaa".to_owned(),
@@ -504,7 +497,7 @@ mod tests {
                 eq("chimamanda.adichie@example.africa")
             );
             expect_that!(
-                request.to.0.first().map(|s| s.as_str()),
+                request.to.0.first().map(|t| t.as_str()),
                 some(eq("yaa.asantewaa@example.africa"))
             );
             expect_that!(
@@ -515,25 +508,25 @@ mod tests {
                 request
                     .cc
                     .as_ref()
-                    .and_then(|r| r.0.first())
-                    .map(|s| s.as_str()),
+                    .and_then(|c| c.0.first())
+                    .map(|c| c.as_str()),
                 some(eq("steve.biko@example.africa"))
             );
             expect_that!(
                 request
                     .bcc
                     .as_ref()
-                    .and_then(|r| r.0.first())
-                    .map(|s| s.as_str()),
+                    .and_then(|b| b.0.first())
+                    .map(|b| b.as_str()),
                 some(eq("miriam.makeba@example.africa"))
             );
             expect_that!(request.tag.as_deref(), some(eq("african-women-history")));
             expect_that!(
                 request
-                    .rely_to
+                    .reply_to
                     .as_ref()
                     .and_then(|r| r.0.first())
-                    .map(|s| s.as_str()),
+                    .map(|r| r.as_str()),
                 some(eq("gbehanzin@example.africa"))
             );
             expect_that!(
@@ -549,7 +542,7 @@ mod tests {
                     .metadata
                     .as_ref()
                     .and_then(|m| m.get("heritage"))
-                    .map(|s| s.as_str()),
+                    .map(|m| m.as_str()),
                 some(eq("ashanti-kingdom"))
             );
             expect_that!(

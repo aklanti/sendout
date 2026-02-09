@@ -55,7 +55,6 @@ mod tests {
         )
     }
 
-    #[cfg(feature = "postmark")]
     fn make_json_without_message_id(
         to: &str,
         submitted_at: &str,
@@ -63,12 +62,12 @@ mod tests {
         message: &str,
     ) -> String {
         format!(
-            r#"{{"To": "{to}", "SubmittedAt": "{submitted_at}", "ErrorCode": {error_code}, "Message": "{message}"}}"#
+            r#"{{"to": "{to}", "submitted_at": "{submitted_at}", "error_code": {error_code}, "message": "{message}"}}"#
         )
     }
 
     #[gtest]
-    fn test_email_response_deserializes_all_fields() {
+    fn email_response_deserializes_all_fields() {
         let json = make_json(
             "kwame.nkrumah@example.africa",
             "2026-02-08T14:22:31Z",
@@ -91,7 +90,7 @@ mod tests {
     }
 
     #[gtest]
-    fn test_email_response_missing_field_fails() {
+    fn email_response_missing_field_fails() {
         let json = make_json_without_message_id(
             "patrice.lumumba@example.africa",
             "2026-02-08T16:00:00Z",
