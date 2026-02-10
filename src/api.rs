@@ -1,4 +1,4 @@
-//! API request trait and utilities
+//! API request trait
 //!
 //! This module provides the [`ApiRequest`] trait, which describes how a request
 //! type should be sent to an HTTP API. Each request type that implements this
@@ -8,9 +8,6 @@ use http::Method;
 use serde::Serialize;
 
 /// A trait for types that represent API requests
-///
-/// Implementors define the HTTP method and endpoint path for the request,
-/// allowing generic clients to route requests without hardcoding API details.
 pub trait ApiRequest: Serialize {
     /// The HTTP method for this request
     const METHOD: Method;

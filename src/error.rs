@@ -33,6 +33,18 @@ pub enum SendoutError {
     InvalidRecipient(String),
 }
 
+#[cfg(feature = "reqwest")]
+impl From<reqwest::Error> for SendoutError {
+    fn from(error: reqwest::Error) -> Self {
+        if error.is_connect() {
+            SendoutError::SendFailed("connection failed".into())
+        } else if error.is_timeout() {
+            SendoutError::SendFailed("connection timeout".into())
+        } else {
+            SendoutError::SendFailed(error.to_string())
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::SendoutError;

@@ -17,6 +17,7 @@ features = ["postmark", "test-util", "tracing"]
 bon = ["dep:bon"]
 garde = ["dep:garde"]
 postmark = []
+reqwest = ["dep:reqwest"]
 test-util = []
 tracing = ["dep:tracing"]
 
@@ -26,6 +27,7 @@ bon = { version = "3.8", optional = true }
 bytes = "1"
 garde = { version = "0.22", optional = true, features = ["derive", "email", "unicode", "url"] }
 http = "1.4.0"
+reqwest = { version = "0.13.2", optional = true, features = ["json"] }
 secrecy = { version = "0.10", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

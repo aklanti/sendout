@@ -7,8 +7,13 @@ pub mod error;
 pub mod macros;
 pub mod api;
 pub mod email;
+pub mod execute;
 #[cfg(feature = "postmark")]
 pub mod postmark;
+
+#[doc(inline)]
+pub use self::execute::Execute;
+
 use async_trait::async_trait;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
