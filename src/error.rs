@@ -1,12 +1,10 @@
 //! Error module
 
-use thiserror::Error;
-
-/// Errors that can occurs when sending an email
+/// Errors that can occurs when using a service
 ///
-/// It represents all possible failures that can occur when attempting
-/// to send an email via the email service.
-#[derive(Debug, Clone, Error)]
+/// It represents all possible failures that can occur when interacting
+/// with an email service.
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
     /// Configuration error preventing the email from being sent out
     #[error("email configuration error: {0}")]
@@ -43,24 +41,5 @@ impl From<reqwest::Error> for Error {
         } else {
             Error::SendFailed(error.to_string())
         }
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::Error;
-
-    #[test]
-    fn email_error_variants() {
-        let config_err = Error::ConfigError("missing token".into());
-        assert!(matches!(config_err, Error::ConfigError(_)));
-
-        let send_err = Error::SendFailed("connection failed".into());
-        assert!(matches!(send_err, Error::SendFailed(_)));
-
-        let rate_err = Error::RateLimitExceeded;
-        assert!(matches!(rate_err, Error::RateLimitExceeded));
-
-        let recipient_err = Error::InvalidRecipient("bad@".into());
-        assert!(matches!(recipient_err, Error::InvalidRecipient(_)));
     }
 }

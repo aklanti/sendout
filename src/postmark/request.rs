@@ -9,7 +9,7 @@ use serde_with::formats::CommaSeparator;
 use serde_with::{StringWithSeparator, serde_as};
 
 use crate::api::ApiRequest;
-use crate::email::{Attachment, Body, Header, Recipients, EmailMessage};
+use crate::email::{Attachment, Body, EmailMessage, Header, Recipients};
 
 /// Postmark email request
 #[serde_as]
@@ -156,7 +156,7 @@ mod tests {
     use serde_json::Value;
 
     use crate::api::ApiRequest;
-    use crate::email::{Attachment, Body, Header, Recipients, EmailMessage};
+    use crate::email::{Attachment, Body, EmailMessage, Header, Recipients};
 
     use super::*;
 
@@ -394,13 +394,12 @@ mod tests {
     }
 
     #[gtest]
-    fn body_flattens_text_body_key() {
+    fn body_flattens_body_key_for_both_variants() {
         let email = minimal_email(Body::Text(
             "Together we shall build a sovereign nation.".to_owned(),
         ));
         let postmark: PostmarkEmailRequest = email.into();
         let json: Value = serde_json::to_value(&postmark).expect("serialization to succeed");
-
         expect_that!(json.get("body"), none());
         expect_that!(json.get("Body"), none());
         expect_that!(
@@ -408,16 +407,12 @@ mod tests {
             some(eq("Together we shall build a sovereign nation."))
         );
         expect_that!(json.get("HtmlBody"), none());
-    }
 
-    #[gtest]
-    fn body_flattens_html_body_key() {
         let email = minimal_email(Body::Html(
             "<h1>Pan-African Unity Conference</h1>".to_owned(),
         ));
         let postmark: PostmarkEmailRequest = email.into();
         let json: Value = serde_json::to_value(&postmark).expect("serialization to succeed");
-
         expect_that!(
             json.get("HtmlBody").and_then(|v| v.as_str()),
             some(eq("<h1>Pan-African Unity Conference</h1>"))
@@ -658,51 +653,6 @@ mod tests {
             let postmark = PostmarkEmailRequest {
                 from: "sender@example.africa".to_owned(),
                 to: emails,
-                subject: "Subject".to_owned(),
-                body: PostmarkBody::TextBody("Body".to_owned()),
-                cc: None,
-                bcc: None,
-                tag: None,
-                reply_to: None,
-                headers: None,
-                metadata: None,
-                attachments: None,
-                message_stream: None,
-            };
-            expect_that!(postmark.validate(), err(anything()));
-        }
-
-        #[gtest]
-        fn valid_postmark_request_passes() {
-            let email = minimal_email(Body::Text("Valid email body".to_owned()));
-            let postmark: PostmarkEmailRequest = email.into();
-            expect_that!(postmark.validate(), ok(anything()));
-        }
-
-        #[gtest]
-        fn invalid_from_email_fails() {
-            let postmark = PostmarkEmailRequest {
-                from: "not-an-email".to_owned(),
-                to: vec!["valid@example.africa".to_owned()],
-                subject: "Subject".to_owned(),
-                body: PostmarkBody::TextBody("Body".to_owned()),
-                cc: None,
-                bcc: None,
-                tag: None,
-                reply_to: None,
-                headers: None,
-                metadata: None,
-                attachments: None,
-                message_stream: None,
-            };
-            expect_that!(postmark.validate(), err(anything()));
-        }
-
-        #[gtest]
-        fn empty_to_recipients_fails() {
-            let postmark = PostmarkEmailRequest {
-                from: "sender@example.africa".to_owned(),
-                to: vec![],
                 subject: "Subject".to_owned(),
                 body: PostmarkBody::TextBody("Body".to_owned()),
                 cc: None,

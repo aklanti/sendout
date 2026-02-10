@@ -264,27 +264,23 @@ mod tests {
     }
 
     #[gtest]
-    fn body_text_serializes_as_text_body() {
-        let body = Body::Text("The Green Belt Movement has planted one million trees.".to_owned());
-        let json: Value = serde_json::to_value(&body).expect("serialization to succeed");
-
+    fn body_serializes_as_expected() {
+        let text_body =
+            Body::Text("The Green Belt Movement has planted one million trees.".to_owned());
+        let text_json: Value = serde_json::to_value(&text_body).expect("serialization to succeed");
         expect_that!(
-            json.get("Text").and_then(|t| t.as_str()),
+            text_json.get("Text").and_then(|t| t.as_str()),
             some(eq("The Green Belt Movement has planted one million trees."))
         );
-        expect_that!(json.get("Html"), none());
-    }
+        expect_that!(text_json.get("Html"), none());
 
-    #[gtest]
-    fn body_html_serializes_as_html_body() {
-        let body = Body::Html("<h1>Pan-African Unity Conference</h1>".to_owned());
-        let json: Value = serde_json::to_value(&body).expect("serialization to succeed");
-
+        let html_body = Body::Html("<h1>Pan-African Unity Conference</h1>".to_owned());
+        let html_json: Value = serde_json::to_value(&html_body).expect("serialization to succeed");
         expect_that!(
-            json.get("Html").and_then(|h| h.as_str()),
+            html_json.get("Html").and_then(|h| h.as_str()),
             some(eq("<h1>Pan-African Unity Conference</h1>"))
         );
-        expect_that!(json.get("Text"), none());
+        expect_that!(html_json.get("Text"), none());
     }
 
     #[gtest]
@@ -426,15 +422,12 @@ mod tests {
         }
 
         #[gtest]
-        fn recipients_valid_single_email() {
-            let recipients = Recipients::from(vec!["patrice.lumumba@example.africa"]);
-            expect_that!(recipients.validate(), ok(anything()));
-        }
+        fn recipients_validation() {
+            let valid = Recipients::from(vec!["patrice.lumumba@example.africa"]);
+            expect_that!(valid.validate(), ok(anything()));
 
-        #[gtest]
-        fn recipients_invalid_single_email_fails() {
-            let recipients = Recipients::from(vec!["completely-invalid"]);
-            expect_that!(recipients.validate(), err(anything()));
+            let invalid = Recipients::from(vec!["completely-invalid"]);
+            expect_that!(invalid.validate(), err(anything()));
         }
     }
 
