@@ -76,8 +76,7 @@ impl ServiceConfig {
             Err(_err) => {
                 #[cfg(feature = "tracing")]
                 tracing::error!(%_err);
-                let error =
-                    Error::ConfigError(format!("{} not set", Self::SENDOUT_ACCOUNT_TOKEN));
+                let error = Error::ConfigError(format!("{} not set", Self::SENDOUT_ACCOUNT_TOKEN));
                 return Err(error);
             }
         };

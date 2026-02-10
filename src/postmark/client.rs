@@ -1,11 +1,9 @@
 //! Postmark client
 
-use async_trait::async_trait;
 use bytes::Bytes;
-use http::{Request, Response, StatusCode};
+use http::Request;
 use secrecy::ExposeSecret;
 
-use crate::Execute;
 use crate::api::ApiRequest;
 use crate::config::ServiceConfig;
 use crate::error::Error;
@@ -34,10 +32,7 @@ impl<C> PostmarkClient<C> {
             err(Debug)
         )
     )]
-    pub fn new_http_request<R: ApiRequest>(
-        &self,
-        request: &R,
-    ) -> Result<Request<Bytes>, Error> {
+    pub fn new_http_request<R: ApiRequest>(&self, request: &R) -> Result<Request<Bytes>, Error> {
         let body = serde_json::to_vec(request)
             .map(Bytes::from)
             .map_err(|err| {
@@ -69,8 +64,8 @@ impl<C> PostmarkClient<C> {
 }
 
 #[cfg(feature = "reqwest")]
-#[async_trait]
-impl Execute for PostmarkClient<reqwest::Client> {
+#[async_trait::async_trait]
+impl crate::Execute for PostmarkClient<reqwest::Client> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(name = "PosmarkClient::execute", skip(self, request), err(Debug))
@@ -78,8 +73,10 @@ impl Execute for PostmarkClient<reqwest::Client> {
     async fn execute<Req, Res>(&self, request: Req) -> Result<Res, Error>
     where
         Req: Into<Request<Bytes>> + Send,
-        Res: TryFrom<Response<Bytes>, Error = Error>,
+        Res: TryFrom<http::Response<Bytes>, Error = Error>,
     {
+        use http::{Response, StatusCode};
+
         let request = request.into();
         let reqwest_request = request.try_into().inspect_err(|_err| {
             #[cfg(feature = "tracing")]
