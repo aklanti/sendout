@@ -9,7 +9,7 @@ use serde_with::formats::CommaSeparator;
 use serde_with::{StringWithSeparator, serde_as};
 
 use crate::api::ApiRequest;
-use crate::email::{Attachment, Body, Header, Recipients, SingleEmail};
+use crate::email::{Attachment, Body, Header, Recipients, EmailMessage};
 
 /// Postmark email request
 #[serde_as]
@@ -125,8 +125,8 @@ impl From<Attachment> for PostmarkAttachment {
     }
 }
 
-impl From<SingleEmail> for PostmarkEmailRequest {
-    fn from(email: SingleEmail) -> Self {
+impl From<EmailMessage> for PostmarkEmailRequest {
+    fn from(email: EmailMessage) -> Self {
         Self {
             from: email.r#from,
             to: email.to.into_inner(),
@@ -156,13 +156,13 @@ mod tests {
     use serde_json::Value;
 
     use crate::api::ApiRequest;
-    use crate::email::{Attachment, Body, Header, Recipients, SingleEmail};
+    use crate::email::{Attachment, Body, Header, Recipients, EmailMessage};
 
     use super::*;
 
     /// Create a minimal email data with given body variant.
-    fn minimal_email(body: Body) -> SingleEmail {
-        SingleEmail {
+    fn minimal_email(body: Body) -> EmailMessage {
+        EmailMessage {
             r#from: "wangari.maathai@example.africa".to_owned(),
             to: vec!["kwame.nkrumah@example.africa"].into(),
             subject: "Green Belt Movement Monthly Update".to_owned(),
@@ -223,7 +223,7 @@ mod tests {
         let mut metadata = HashMap::new();
         metadata.insert("key".to_owned(), "value".to_owned());
 
-        let email = SingleEmail {
+        let email = EmailMessage {
             r#from: "chimamanda.adichie@example.africa".to_owned(),
             to: vec!["yaa.asantewaa@example.africa"].into(),
             subject: "Subject".to_owned(),
@@ -332,7 +332,7 @@ mod tests {
 
     #[gtest]
     fn pascal_case_serialization_optional_fields() {
-        let email = SingleEmail {
+        let email = EmailMessage {
             r#from: "kwame.nkrumah@example.africa".to_owned(),
             to: vec!["yaa.asantewaa@example.africa"].into(),
             subject: "Pan-African Congress Invitation".to_owned(),
@@ -585,7 +585,7 @@ mod tests {
         #[gtest]
         fn tag_max_length_1000_fails() {
             let long_tag = "x".repeat(1001);
-            let email = SingleEmail {
+            let email = EmailMessage {
                 r#from: "miriam.makeba@example.africa".to_owned(),
                 to: Recipients::from(vec!["gbehanzin@example.africa".to_owned()]),
                 subject: "Mama Africa World Tour Dates".to_owned(),
@@ -607,7 +607,7 @@ mod tests {
         #[gtest]
         fn tag_at_max_length_1000_passes() {
             let max_tag = "y".repeat(1000);
-            let email = SingleEmail {
+            let email = EmailMessage {
                 r#from: "wangari.maathai@example.africa".to_owned(),
                 to: Recipients::from(vec!["thomas.sankara@example.africa".to_owned()]),
                 subject: "Reforestation Partnership Proposal".to_owned(),

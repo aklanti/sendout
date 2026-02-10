@@ -14,7 +14,7 @@ use serde_with::{StringWithSeparator, serde_as};
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "bon", derive(bon::Builder))]
 #[cfg_attr(feature = "garde", derive(Validate))]
-pub struct SingleEmail {
+pub struct EmailMessage {
     /// The sender email address
     #[cfg_attr(feature = "garde", garde(email))]
     pub r#from: String,
@@ -131,7 +131,7 @@ mod tests {
 
     #[gtest]
     fn email_request_serializes_required_fields() {
-        let request = SingleEmail {
+        let request = EmailMessage {
             r#from: "wangari.maathai@example.africa".to_owned(),
             to: vec!["kwame.nkrumah@example.africa"].into(),
             subject: "Green Belt Movement Monthly Update".to_owned(),
@@ -168,7 +168,7 @@ mod tests {
 
     #[gtest]
     fn email_request_omits_none_optional_fields() {
-        let request = SingleEmail {
+        let request = EmailMessage {
             r#from: "thomas.sankara@example.africa".to_owned(),
             to: vec!["patrice.lumumba@example.africa"].into(),
             subject: "Self-Sufficiency Progress Report".to_owned(),
@@ -200,7 +200,7 @@ mod tests {
         let mut metadata = HashMap::new();
         metadata.insert("literary_genre".to_owned(), "african-fiction".to_owned());
 
-        let request = SingleEmail {
+        let request = EmailMessage {
             r#from: "chimamanda.adichie@example.africa".to_owned(),
             to: Recipients::from(vec!["yaa.asantewaa@example.africa"]),
             subject: "New Novel Draft Ready for Review".to_owned(),
@@ -365,7 +365,7 @@ mod tests {
 
         #[gtest]
         fn email_request_valid_from_email() {
-            let request = SingleEmail {
+            let request = EmailMessage {
                 r#from: "wangari.maathai@example.africa".to_owned(),
                 to: vec!["patrice.lumumba@example.africa"].into(),
                 subject: "Environmental Restoration Initiative".to_owned(),
@@ -387,7 +387,7 @@ mod tests {
 
         #[gtest]
         fn email_request_invalid_from_email_fails() {
-            let request = SingleEmail {
+            let request = EmailMessage {
                 r#from: "this-is-not-an-email-address".to_owned(),
                 to: vec!["thomas.sankara@example.africa"].into(),
                 subject: "Revolutionary Economic Reforms".to_owned(),
@@ -407,7 +407,7 @@ mod tests {
 
         #[gtest]
         fn email_request_validates_nested_to_recipients() {
-            let request = SingleEmail {
+            let request = EmailMessage {
                 r#from: "chimamanda.adichie@example.africa".to_owned(),
                 to: vec!["broken-recipient-format"].into(),
                 subject: "The Danger of a Single Story".to_owned(),
@@ -444,7 +444,7 @@ mod tests {
 
         #[gtest]
         fn email_request_builder_with_required_fields() {
-            let request = SingleEmail::builder()
+            let request = EmailMessage::builder()
                 .r#from("patrice.lumumba@example.africa".to_owned())
                 .to(vec!["kwame.nkrumah@example.africa"].into())
                 .subject("Congo's Path to Sovereignty".to_owned())
@@ -468,7 +468,7 @@ mod tests {
             let mut metadata = HashMap::new();
             metadata.insert("heritage".to_owned(), "ashanti-kingdom".to_owned());
 
-            let request = SingleEmail::builder()
+            let request = EmailMessage::builder()
                 .r#from("chimamanda.adichie@example.africa".to_owned())
                 .to(vec!["yaa.asantewaa@example.africa"].into())
                 .subject("Celebrating African Women in Literature".to_owned())

@@ -1,5 +1,5 @@
 ---
-source: src/lib.rs
+source: src/service.rs
 expression: sender.sent_emails()
 ---
 - hi
