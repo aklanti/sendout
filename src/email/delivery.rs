@@ -4,7 +4,7 @@ use bytes::Bytes;
 use http::Response;
 use serde::Deserialize;
 
-use crate::error::SendoutError;
+use crate::error::Error;
 
 /// Sent email response
 #[derive(Debug, Clone, Deserialize)]
@@ -22,7 +22,7 @@ pub struct EmailDelivery {
 }
 
 impl TryFrom<Response<Bytes>> for EmailDelivery {
-    type Error = SendoutError;
+    type Error = Error;
 
     #[cfg_attr(
         feature = "tracing",
@@ -32,7 +32,7 @@ impl TryFrom<Response<Bytes>> for EmailDelivery {
         serde_json::from_slice(response.body()).map_err(|err| {
             #[cfg(feature = "tracing")]
             tracing::error!(?err);
-            SendoutError::SendFailed(err.to_string())
+            Error::SendFailed(err.to_string())
         })
     }
 }

@@ -18,19 +18,19 @@ use async_trait::async_trait;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-use self::error::SendoutError;
+use self::error::Error;
 
 /// Trait for sending emails
 ///
 /// This trait defines the mechanism for sending emails.
 #[async_trait]
-pub trait Sendout<Email, Response>: Send + Sync
+pub trait EmailService<Email, Response>: Send + Sync
 where
     Email: Serialize,
     Response: DeserializeOwned,
 {
     /// Send an email
-    async fn send(&self, email: Email) -> Result<Response, SendoutError>;
+    async fn send_email(&self, email: Email) -> Result<Response, Error>;
 }
 
 cfg_test_util! {
@@ -42,17 +42,17 @@ cfg_test_util! {
     /// Mock sender that records sent emails
     pub struct MockEmailSender<Email> {
         /// The error to return when failure is expected
-        pub failure_error: Option<SendoutError>,
+        pub failure_error: Option<Error>,
         /// Records sent emails
         pub outbox: Outbox<Email>,
     }
 
     #[async_trait]
-    impl<Email> Sendout<Email, ()> for MockEmailSender<Email>
+    impl<Email> EmailService<Email, ()> for MockEmailSender<Email>
     where
         Email: Serialize + Send + Sync,
     {
-        async fn send(&self, email: Email) -> Result<(), SendoutError> {
+        async fn send_email(&self, email: Email) -> Result<(), Error> {
             if let Some(err) = &self.failure_error {
                 return Err(err.clone());
             }
@@ -85,7 +85,7 @@ cfg_test_util! {
         /// Creates new `MockEmailSender` that fails with the given error.
         ///
         /// Any attempt to send an email always returns the specified error.
-        pub fn with_error(error: SendoutError) -> Self {
+        pub fn with_error(error: Error) -> Self {
             Self {
                 failure_error: Some(error),
                 ..MockEmailSender::default()
@@ -119,7 +119,7 @@ cfg_test! {
         #[gtest]
         async fn send_email_successfully() {
             let sender = MockEmailSender::new();
-            let res = sender.send("hi").await;
+            let res = sender.send_email("hi").await;
             expect_that!(res, ok(anything()));
             expect_that!(sender.total_emails_sent(), eq(1));
             insta::assert_yaml_snapshot!(sender.sent_emails());
@@ -128,8 +128,8 @@ cfg_test! {
         #[tokio::test]
         #[gtest]
         async fn send_email_fails() {
-            let sender = MockEmailSender::with_error(SendoutError::SendFailed("test error".into()));
-            let res = sender.send("hi").await;
+            let sender = MockEmailSender::with_error(Error::SendFailed("test error".into()));
+            let res = sender.send_email("hi").await;
             expect_that!(res, err(anything()));
             expect_that!(sender.total_emails_sent(), eq(0));
             insta::assert_yaml_snapshot!(sender.sent_emails());

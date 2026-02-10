@@ -8,7 +8,7 @@ use secrecy::ExposeSecret;
 use crate::Execute;
 use crate::api::ApiRequest;
 use crate::config::ServiceConfig;
-use crate::error::SendoutError;
+use crate::error::Error;
 
 /// Client for interacting with Postmark APIs
 #[derive(Debug)]
@@ -37,13 +37,13 @@ impl<C> PostmarkClient<C> {
     pub fn new_http_request<R: ApiRequest>(
         &self,
         request: &R,
-    ) -> Result<Request<Bytes>, SendoutError> {
+    ) -> Result<Request<Bytes>, Error> {
         let body = serde_json::to_vec(request)
             .map(Bytes::from)
             .map_err(|err| {
                 #[cfg(feature = "tracing")]
                 tracing::error!(?err);
-                SendoutError::SendFailed(format!("failed to serialize email: {err}"))
+                Error::SendFailed(format!("failed to serialize email: {err}"))
             })?;
         let uri = format!("{}{}", self.config.base_url, R::ENDPOINT);
 
@@ -63,7 +63,7 @@ impl<C> PostmarkClient<C> {
         request.body(body).map_err(|err| {
             #[cfg(feature = "tracing")]
             tracing::error!(?err);
-            SendoutError::SendFailed(format!("failed to build HTTP request: {err}"))
+            Error::SendFailed(format!("failed to build HTTP request: {err}"))
         })
     }
 }
@@ -75,10 +75,10 @@ impl Execute for PostmarkClient<reqwest::Client> {
         feature = "tracing",
         tracing::instrument(name = "PosmarkClient::execute", skip(self, request), err(Debug))
     )]
-    async fn execute<Req, Res>(&self, request: Req) -> Result<Res, SendoutError>
+    async fn execute<Req, Res>(&self, request: Req) -> Result<Res, Error>
     where
         Req: Into<Request<Bytes>> + Send,
-        Res: TryFrom<Response<Bytes>, Error = SendoutError>,
+        Res: TryFrom<Response<Bytes>, Error = Error>,
     {
         let request = request.into();
         let reqwest_request = request.try_into().inspect_err(|_err| {
@@ -89,7 +89,7 @@ impl Execute for PostmarkClient<reqwest::Client> {
         let response = self.client.execute(reqwest_request).await?;
 
         if response.status() == StatusCode::TOO_MANY_REQUESTS {
-            return Err(SendoutError::RateLimitExceeded);
+            return Err(Error::RateLimitExceeded);
         }
         let status = response.status();
         let headers = response.headers().clone();
@@ -105,7 +105,7 @@ impl Execute for PostmarkClient<reqwest::Client> {
                 #[cfg(feature = "tracing")]
                 tracing::error!(?err);
 
-                SendoutError::SendFailed(format!("failed to create response {err}"))
+                Error::SendFailed(format!("failed to create response {err}"))
             })?;
 
         *http_response.headers_mut() = headers;

@@ -5,7 +5,7 @@ use http::Response;
 use serde::Deserialize;
 
 use crate::email::EmailDelivery;
-use crate::error::SendoutError;
+use crate::error::Error;
 
 /// Postmark email response
 #[derive(Debug, Clone, Deserialize)]
@@ -25,11 +25,11 @@ pub struct PostmarkEmailResponse {
 }
 
 impl TryFrom<Response<Bytes>> for PostmarkEmailResponse {
-    type Error = SendoutError;
+    type Error = Error;
 
     fn try_from(response: Response<Bytes>) -> Result<Self, Self::Error> {
         serde_json::from_slice(response.body())
-            .map_err(|e| SendoutError::SendFailed(format!("failed to parse response: {e}")))
+            .map_err(|e| Error::SendFailed(format!("failed to parse response: {e}")))
     }
 }
 

@@ -7,7 +7,7 @@ use thiserror::Error;
 /// It represents all possible failures that can occur when attempting
 /// to send an email via the email service.
 #[derive(Debug, Clone, Error)]
-pub enum SendoutError {
+pub enum Error {
     /// Configuration error preventing the email from being sent out
     #[error("email configuration error: {0}")]
     ConfigError(String),
@@ -34,33 +34,33 @@ pub enum SendoutError {
 }
 
 #[cfg(feature = "reqwest")]
-impl From<reqwest::Error> for SendoutError {
+impl From<reqwest::Error> for Error {
     fn from(error: reqwest::Error) -> Self {
         if error.is_connect() {
-            SendoutError::SendFailed("connection failed".into())
+            Error::SendFailed("connection failed".into())
         } else if error.is_timeout() {
-            SendoutError::SendFailed("connection timeout".into())
+            Error::SendFailed("connection timeout".into())
         } else {
-            SendoutError::SendFailed(error.to_string())
+            Error::SendFailed(error.to_string())
         }
     }
 }
 #[cfg(test)]
 mod tests {
-    use super::SendoutError;
+    use super::Error;
 
     #[test]
     fn email_error_variants() {
-        let config_err = SendoutError::ConfigError("missing token".into());
-        assert!(matches!(config_err, SendoutError::ConfigError(_)));
+        let config_err = Error::ConfigError("missing token".into());
+        assert!(matches!(config_err, Error::ConfigError(_)));
 
-        let send_err = SendoutError::SendFailed("connection failed".into());
-        assert!(matches!(send_err, SendoutError::SendFailed(_)));
+        let send_err = Error::SendFailed("connection failed".into());
+        assert!(matches!(send_err, Error::SendFailed(_)));
 
-        let rate_err = SendoutError::RateLimitExceeded;
-        assert!(matches!(rate_err, SendoutError::RateLimitExceeded));
+        let rate_err = Error::RateLimitExceeded;
+        assert!(matches!(rate_err, Error::RateLimitExceeded));
 
-        let recipient_err = SendoutError::InvalidRecipient("bad@".into());
-        assert!(matches!(recipient_err, SendoutError::InvalidRecipient(_)));
+        let recipient_err = Error::InvalidRecipient("bad@".into());
+        assert!(matches!(recipient_err, Error::InvalidRecipient(_)));
     }
 }
