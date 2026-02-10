@@ -9,7 +9,7 @@ use super::error::SendoutError;
 /// Configuration for the email sending service
 #[must_use]
 #[derive(Debug, serde::Deserialize)]
-pub struct EmailConfig {
+pub struct ServiceConfig {
     /// API endpoint for the email service
     pub base_url: String,
     /// Secret API token for authentication
@@ -28,7 +28,7 @@ pub struct EmailConfig {
     pub from_email: String,
 }
 
-impl EmailConfig {
+impl ServiceConfig {
     /// Account API token
     pub const SENDOUT_ACCOUNT_TOKEN: &str = "SENDOUT_ACCOUNT_TOKEN";
     /// Email service API
@@ -38,18 +38,18 @@ impl EmailConfig {
     /// Server API token
     pub const SENDOUT_SERVER_TOKEN: &str = "SENDOUT_SERVER_TOKEN";
 
-    /// Creates [`EmailConfig`] from environment variables
+    /// Creates [`ServiceConfig`] from environment variables
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// use sendout::config::EmailConfig;
-    /// let email_config = EmailConfig::from_env()?;
+    /// use sendout::config::ServiceConfig;
+    /// let email_config = ServiceConfig::from_env()?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(name = "EmailConfig::from_env", err(Debug))
+        tracing::instrument(name = "ServiceConfig::from_env", err(Debug))
     )]
     pub fn from_env() -> Result<Self, SendoutError> {
         let base_url = std::env::var(Self::SENDOUT_BASE_URL).map_err(|_err| {
@@ -93,12 +93,12 @@ impl EmailConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::EmailConfig;
+    use super::ServiceConfig;
     use secrecy::{ExposeSecret, SecretString};
 
     #[test]
     fn email_config() {
-        let config = EmailConfig {
+        let config = ServiceConfig {
             server_token: SecretString::from(String::from("test-token")),
             from_email: "from@test.com".into(),
             base_url: "http://localhost:6666".into(),
