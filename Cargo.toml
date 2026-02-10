@@ -23,18 +23,17 @@ tracing = ["dep:tracing"]
 [dependencies]
 async-trait = "0.1"
 bon = { version = "3.8", optional = true }
+bytes = "1"
 garde = { version = "0.22", optional = true, features = ["derive", "email", "unicode", "url"] }
+http = "1.4.0"
 secrecy = { version = "0.10", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
-serde_with = "3.16"
 serde_json = "1"
+serde_with = "3.16"
 thiserror = "2"
 tracing = { version = "0.1", optional = true }
-bytes = "1"
-http = "1.4.0"
 
 [dev-dependencies]
-cfg-if = "1"
 googletest = "0.14"
 insta = { version = "1.46", features = ["yaml"] }
 serde_json = "1"
