@@ -38,11 +38,11 @@ sendout = { version = "0.1", features = ["postmark"] }
 
 You can enable optional features to customize the crate for your needs:
 
-- `postmark` enables Postmark provider support
+- `bon` enables builder pattern
 - `garde` enables validation using the `garde` crate
+- `postmark` enables Postmark provider support
 - `reqwest` uses `reqwest` as the HTTP backend for sending requests
 - `tracing` enables tracing instrumentation
-- `bon` enables builder pattern
 - `test-util` enables test utilities and mock sender for integration
 
 > **Note:** Some features may enable additional dependencies.
