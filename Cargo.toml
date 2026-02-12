@@ -8,7 +8,7 @@ license = "MPL-2.0"
 categories = ["email"]
 keywords = ["email", "mailer", "message"]
 repository = "https://github.com/aklanti/sendout"
-rust-version = "1.92.0"
+rust-version = "1.93.0"
 
 [package.metadata.docs.rs]
 features = ["postmark", "test-util", "tracing"]

@@ -25,6 +25,7 @@ alias t := test
 
 # Run various formatter
 @fmt:
+    cargo fmt --all
     cargo sort --grouped
     just --fmt --unstable
 
