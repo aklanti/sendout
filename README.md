@@ -12,15 +12,40 @@
 
 ## Overview
 
-`sendout` is a crate that provides an opinionated abstraction for sending out emails
+`sendout` is a crate for sending emails via API-based providers, with a focus on strong type safety, validation, and extensibility.
+It supports providers like Postmark and is designed for easy integration and robust error handling.
+
+## Design Philosophy
+
+- **Provider Abstraction:** Unified API for multiple email providers (e.g., Postmark).
+- **Strong Typing:** Compile-time validation for email fields, recipients, attachments, and headers.
+- **Extensible:** Add new providers or customize existing ones with minimal effort.
+- **Comprehensive Validation:** Uses [garde](https://github.com/jprochazk/garde) for field validation.
+- **Test Utilities:** Includes mock senders and a rich test suite.
 
 ## Usage
 
-TBD
+### Add to Your `Cargo.toml`
 
-## Optional features
+```toml
+[dependencies]
+sendout = "0.1"
+# Optional: enable Postmark support
+sendout = { version = "0.1", features = ["postmark"] }
+```
 
-TODO
+## Optional Features
+
+You can enable optional features to customize the crate for your needs:
+
+- `postmark` enables Postmark provider support
+- `garde` enables validation using the `garde` crate
+- `reqwest` uses `reqwest` as the HTTP backend for sending requests
+- `tracing` enables tracing instrumentation
+- `bon` enables builder pattern
+- `test-util` enables test utilities and mock sender for integration
+
+> **Note:** Some features may enable additional dependencies.
 
 ## Supported Rust Versions
 TODO
