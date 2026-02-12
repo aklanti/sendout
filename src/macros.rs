@@ -1,4 +1,5 @@
 //! This module defines various macros that enable specific code.
+// Theses macros are inspired by [tokio::macros::cfg](https://github.com/tokio-rs/tokio/blob/master/tokio/src/macros/cfg.rs)
 
 /// Enables test specific code.
 macro_rules! cfg_test_util {

@@ -93,9 +93,11 @@ impl ServiceConfig {
 #[cfg(test)]
 mod tests {
     use super::ServiceConfig;
+    use googletest::matchers::eq;
+    use googletest::{expect_that, gtest};
     use secrecy::{ExposeSecret, SecretString};
 
-    #[test]
+    #[gtest]
     fn email_config() {
         let config = ServiceConfig {
             server_token: SecretString::from(String::from("test-token")),
@@ -104,8 +106,12 @@ mod tests {
             account_token: Some(SecretString::from(String::from("test-account-token"))),
         };
 
-        assert_eq!(config.server_token.expose_secret(), "test-token");
-        assert_eq!(config.from_email, "from@test.com");
-        assert_eq!(config.base_url, "http://localhost:6666");
+        expect_that!(config.server_token.expose_secret(), eq("test-token"));
+        expect_that!(config.from_email, eq("from@test.com"));
+        expect_that!(config.base_url, eq("http://localhost:6666"));
+        expect_that!(
+            config.account_token.expect("account_token").expose_secret(),
+            eq("test-account-token")
+        )
     }
 }

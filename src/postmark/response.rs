@@ -29,7 +29,7 @@ impl TryFrom<Response<Bytes>> for PostmarkEmailResponse {
 
     fn try_from(response: Response<Bytes>) -> Result<Self, Self::Error> {
         serde_json::from_slice(response.body())
-            .map_err(|e| Error::SendFailed(format!("failed to parse response: {e}")))
+            .map_err(|err| Error::SendFailed(format!("failed to parse response: {err}")))
     }
 }
 
