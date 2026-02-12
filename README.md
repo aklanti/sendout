@@ -45,8 +45,6 @@ You can enable optional features to customize the crate for your needs:
 - `tracing` enables tracing instrumentation
 - `test-util` enables test utilities and mock sender for integration
 
-> **Note:** Some features may enable additional dependencies.
-
 ## Supported Rust Versions
 TODO
 
