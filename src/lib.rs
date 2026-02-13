@@ -19,4 +19,6 @@ pub use self::api::ApiRequest;
 #[doc(inline)]
 pub use self::execute::Execute;
 #[doc(inline)]
+pub use config::ServiceConfig;
+#[doc(inline)]
 pub use service::EmailService;

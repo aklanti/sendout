@@ -40,6 +40,7 @@ googletest = "0.14"
 insta = { version = "1.46", features = ["yaml"] }
 serde_json = "1"
 tokio = { version = "1.49", features = ["rt-multi-thread", "macros"] }
+wiremock = "0.6"
 
 [profile.dev.package]
 insta.opt-level = 3

@@ -128,7 +128,7 @@ impl From<Attachment> for PostmarkAttachment {
 impl From<EmailMessage> for PostmarkEmailRequest {
     fn from(email: EmailMessage) -> Self {
         Self {
-            from: email.r#from,
+            from: email.from,
             to: email.to.into_inner(),
             subject: email.subject,
             body: email.body.into(),
@@ -163,7 +163,7 @@ mod tests {
     /// Create a minimal email data with given body variant.
     fn minimal_email(body: Body) -> EmailMessage {
         EmailMessage {
-            r#from: "wangari.maathai@example.africa".to_owned(),
+            from: "wangari.maathai@example.africa".to_owned(),
             to: vec!["kwame.nkrumah@example.africa"].into(),
             subject: "Green Belt Movement Monthly Update".to_owned(),
             body,
@@ -224,7 +224,7 @@ mod tests {
         metadata.insert("key".to_owned(), "value".to_owned());
 
         let email = EmailMessage {
-            r#from: "chimamanda.adichie@example.africa".to_owned(),
+            from: "chimamanda.adichie@example.africa".to_owned(),
             to: vec!["yaa.asantewaa@example.africa"].into(),
             subject: "Subject".to_owned(),
             body: Body::Text("Body".to_owned()),
@@ -333,7 +333,7 @@ mod tests {
     #[gtest]
     fn pascal_case_serialization_optional_fields() {
         let email = EmailMessage {
-            r#from: "kwame.nkrumah@example.africa".to_owned(),
+            from: "kwame.nkrumah@example.africa".to_owned(),
             to: vec!["yaa.asantewaa@example.africa"].into(),
             subject: "Pan-African Congress Invitation".to_owned(),
             body: Body::Text("Africa must unite for true independence.".to_owned()),
@@ -581,7 +581,7 @@ mod tests {
         fn tag_max_length_1000_fails() {
             let long_tag = "x".repeat(1001);
             let email = EmailMessage {
-                r#from: "miriam.makeba@example.africa".to_owned(),
+                from: "miriam.makeba@example.africa".to_owned(),
                 to: Recipients::from(vec!["gbehanzin@example.africa".to_owned()]),
                 subject: "Mama Africa World Tour Dates".to_owned(),
                 body: Body::Text("Music carries the voice of our people across oceans.".to_owned()),
@@ -603,7 +603,7 @@ mod tests {
         fn tag_at_max_length_1000_passes() {
             let max_tag = "y".repeat(1000);
             let email = EmailMessage {
-                r#from: "wangari.maathai@example.africa".to_owned(),
+                from: "wangari.maathai@example.africa".to_owned(),
                 to: Recipients::from(vec!["thomas.sankara@example.africa".to_owned()]),
                 subject: "Reforestation Partnership Proposal".to_owned(),
                 body: Body::Text(

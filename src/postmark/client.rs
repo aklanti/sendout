@@ -26,6 +26,11 @@ impl<C> PostmarkClient<C> {
     ///  Account header name
     const X_POSTMARK_ACCOUNT: &str = "X-POSTMARK-ACCOUNT";
 
+    /// Creates new [`PostmarkClient`] client
+    pub const fn new(client: C, config: ServiceConfig) -> Self {
+        Self { client, config }
+    }
+
     /// Creates new HTTP request for Postmark API
     #[cfg_attr(
         feature = "tracing",

@@ -8,7 +8,7 @@ use serde::Serialize;
 use serde_with::formats::CommaSeparator;
 use serde_with::{StringWithSeparator, serde_as};
 
-/// Request for sending an email
+/// EmailMessage for sending an email
 #[serde_as]
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize)]
@@ -17,7 +17,7 @@ use serde_with::{StringWithSeparator, serde_as};
 pub struct EmailMessage {
     /// The sender email address
     #[cfg_attr(feature = "garde", garde(email))]
-    pub r#from: String,
+    pub from: String,
     /// Recipient email address
     #[cfg_attr(feature = "garde", garde(dive))]
     pub to: Recipients,
@@ -130,9 +130,9 @@ mod tests {
     use super::*;
 
     #[gtest]
-    fn email_request_serializes_required_fields() {
-        let request = EmailMessage {
-            r#from: "wangari.maathai@example.africa".to_owned(),
+    fn email_email_message_serializes_required_fields() {
+        let email_message = EmailMessage {
+            from: "wangari.maathai@example.africa".to_owned(),
             to: vec!["kwame.nkrumah@example.africa"].into(),
             subject: "Green Belt Movement Monthly Update".to_owned(),
             body: Body::Text("We planted 10,000 trees across Kenya this month.".to_owned()),
@@ -146,7 +146,7 @@ mod tests {
             message_stream: None,
         };
 
-        let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
+        let json: Value = serde_json::to_value(&email_message).expect("serialization to succeed");
 
         expect_that!(
             json.get("from").and_then(|v| v.as_str()),
@@ -167,9 +167,9 @@ mod tests {
     }
 
     #[gtest]
-    fn email_request_omits_none_optional_fields() {
-        let request = EmailMessage {
-            r#from: "thomas.sankara@example.africa".to_owned(),
+    fn email_email_message_omits_none_optional_fields() {
+        let email_message = EmailMessage {
+            from: "thomas.sankara@example.africa".to_owned(),
             to: vec!["patrice.lumumba@example.africa"].into(),
             subject: "Self-Sufficiency Progress Report".to_owned(),
             body: Body::Text("Burkina Faso grows stronger through our own efforts.".to_owned()),
@@ -183,7 +183,7 @@ mod tests {
             message_stream: None,
         };
 
-        let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
+        let json: Value = serde_json::to_value(&email_message).expect("serialization to succeed");
 
         expect_that!(json.get("cc"), none());
         expect_that!(json.get("bcc"), none());
@@ -196,13 +196,13 @@ mod tests {
     }
 
     #[gtest]
-    fn email_request_includes_optional_fields_when_present() {
+    fn email_email_message_includes_optional_fields_when_present() {
         let mut metadata = HashMap::new();
         metadata.insert("literary_genre".to_owned(), "african-fiction".to_owned());
 
-        let request = EmailMessage {
-            r#from: "chimamanda.adichie@example.africa".to_owned(),
-            to: Recipients::from(vec!["yaa.asantewaa@example.africa"]),
+        let email_message = EmailMessage {
+            from: "chimamanda.adichie@example.africa".to_owned(),
+            to: vec!["yaa.asantewaa@example.africa"].into(),
             subject: "New Novel Draft Ready for Review".to_owned(),
             body: Body::Text("The story of our ancestors deserves to be told.".to_owned()),
             cc: Some(vec!["steve.biko@example.africa"].into()),
@@ -222,7 +222,7 @@ mod tests {
             message_stream: Some("literary-submissions".to_owned()),
         };
 
-        let json: Value = serde_json::to_value(&request).expect("serialization to succeed");
+        let json: Value = serde_json::to_value(&email_message).expect("serialization to succeed");
         expect_that!(
             json.get("cc").and_then(|c| c.as_str()),
             some(eq("steve.biko@example.africa"))
@@ -360,9 +360,9 @@ mod tests {
         use super::*;
 
         #[gtest]
-        fn email_request_valid_from_email() {
-            let request = EmailMessage {
-                r#from: "wangari.maathai@example.africa".to_owned(),
+        fn email_email_message_valid_from_email() {
+            let email_message = EmailMessage {
+                from: "wangari.maathai@example.africa".to_owned(),
                 to: vec!["patrice.lumumba@example.africa"].into(),
                 subject: "Environmental Restoration Initiative".to_owned(),
                 body: Body::Text(
@@ -378,13 +378,13 @@ mod tests {
                 message_stream: None,
             };
 
-            expect_that!(request.validate(), ok(anything()));
+            expect_that!(email_message.validate(), ok(anything()));
         }
 
         #[gtest]
-        fn email_request_invalid_from_email_fails() {
-            let request = EmailMessage {
-                r#from: "this-is-not-an-email-address".to_owned(),
+        fn email_email_message_invalid_from_email_fails() {
+            let email_message = EmailMessage {
+                from: "this-is-not-an-email-address".to_owned(),
                 to: vec!["thomas.sankara@example.africa"].into(),
                 subject: "Revolutionary Economic Reforms".to_owned(),
                 body: Body::Text("The people of Burkina Faso demand self-reliance.".to_owned()),
@@ -398,13 +398,13 @@ mod tests {
                 message_stream: None,
             };
 
-            expect_that!(request.validate(), err(anything()));
+            expect_that!(email_message.validate(), err(anything()));
         }
 
         #[gtest]
-        fn email_request_validates_nested_to_recipients() {
-            let request = EmailMessage {
-                r#from: "chimamanda.adichie@example.africa".to_owned(),
+        fn email_email_message_validates_nested_to_recipients() {
+            let email_message = EmailMessage {
+                from: "chimamanda.adichie@example.africa".to_owned(),
                 to: vec!["broken-recipient-format"].into(),
                 subject: "The Danger of a Single Story".to_owned(),
                 body: Body::Text("Our narratives shape how the world sees Africa.".to_owned()),
@@ -418,7 +418,7 @@ mod tests {
                 message_stream: None,
             };
 
-            expect_that!(request.validate(), err(anything()));
+            expect_that!(email_message.validate(), err(anything()));
         }
 
         #[gtest]
@@ -436,9 +436,9 @@ mod tests {
         use super::*;
 
         #[gtest]
-        fn email_request_builder_with_required_fields() {
-            let request = EmailMessage::builder()
-                .r#from("patrice.lumumba@example.africa".to_owned())
+        fn email_email_message_builder_with_required_fields() {
+            let email_message = EmailMessage::builder()
+                .from("patrice.lumumba@example.africa".to_owned())
                 .to(vec!["kwame.nkrumah@example.africa"].into())
                 .subject("Congo's Path to Sovereignty".to_owned())
                 .body(Body::Text(
@@ -447,22 +447,25 @@ mod tests {
                 .build();
 
             expect_that!(
-                request.r#from.as_str(),
+                email_message.from.as_str(),
                 eq("patrice.lumumba@example.africa")
             );
-            expect_that!(request.subject.as_str(), eq("Congo's Path to Sovereignty"));
-            expect_that!(request.cc, none());
-            expect_that!(request.bcc, none());
-            expect_that!(request.tag, none());
+            expect_that!(
+                email_message.subject.as_str(),
+                eq("Congo's Path to Sovereignty")
+            );
+            expect_that!(email_message.cc, none());
+            expect_that!(email_message.bcc, none());
+            expect_that!(email_message.tag, none());
         }
 
         #[gtest]
-        fn email_request_builder_with_all_fields() {
+        fn email_email_message_builder_with_all_fields() {
             let mut metadata = HashMap::new();
             metadata.insert("heritage".to_owned(), "ashanti-kingdom".to_owned());
 
-            let request = EmailMessage::builder()
-                .r#from("chimamanda.adichie@example.africa".to_owned())
+            let email_message = EmailMessage::builder()
+                .from("chimamanda.adichie@example.africa".to_owned())
                 .to(vec!["yaa.asantewaa@example.africa"].into())
                 .subject("Celebrating African Women in Literature".to_owned())
                 .body(Body::Html(
@@ -486,19 +489,19 @@ mod tests {
                 .build();
 
             expect_that!(
-                request.r#from.as_str(),
+                email_message.from.as_str(),
                 eq("chimamanda.adichie@example.africa")
             );
             expect_that!(
-                request.to.0.first().map(|t| t.as_str()),
+                email_message.to.0.first().map(|t| t.as_str()),
                 some(eq("yaa.asantewaa@example.africa"))
             );
             expect_that!(
-                request.subject.as_str(),
+                email_message.subject.as_str(),
                 eq("Celebrating African Women in Literature")
             );
             expect_that!(
-                request
+                email_message
                     .cc
                     .as_ref()
                     .and_then(|c| c.0.first())
@@ -506,16 +509,19 @@ mod tests {
                 some(eq("steve.biko@example.africa"))
             );
             expect_that!(
-                request
+                email_message
                     .bcc
                     .as_ref()
                     .and_then(|b| b.0.first())
                     .map(|b| b.as_str()),
                 some(eq("miriam.makeba@example.africa"))
             );
-            expect_that!(request.tag.as_deref(), some(eq("african-women-history")));
             expect_that!(
-                request
+                email_message.tag.as_deref(),
+                some(eq("african-women-history"))
+            );
+            expect_that!(
+                email_message
                     .reply_to
                     .as_ref()
                     .and_then(|r| r.0.first())
@@ -523,7 +529,7 @@ mod tests {
                 some(eq("gbehanzin@example.africa"))
             );
             expect_that!(
-                request
+                email_message
                     .headers
                     .as_ref()
                     .and_then(|h| h.first())
@@ -531,7 +537,7 @@ mod tests {
                 some(eq("X-Literary-Tribute"))
             );
             expect_that!(
-                request
+                email_message
                     .metadata
                     .as_ref()
                     .and_then(|m| m.get("heritage"))
@@ -539,7 +545,7 @@ mod tests {
                 some(eq("ashanti-kingdom"))
             );
             expect_that!(
-                request
+                email_message
                     .attachments
                     .as_ref()
                     .and_then(|a| a.first())
@@ -547,7 +553,7 @@ mod tests {
                 some(eq("war-of-the-golden-stool.json"))
             );
             expect_that!(
-                request.message_stream.as_deref(),
+                email_message.message_stream.as_deref(),
                 some(eq("african-heritage"))
             );
         }
