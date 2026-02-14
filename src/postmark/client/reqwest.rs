@@ -48,7 +48,6 @@ impl crate::Execute for PostmarkClient<reqwest::Client> {
         })?;
 
         let response = self.client.execute(reqwest_request).await?;
-
         if response.status() == StatusCode::TOO_MANY_REQUESTS {
             return Err(Error::RateLimitExceeded);
         }

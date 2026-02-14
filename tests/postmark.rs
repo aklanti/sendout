@@ -1,36 +1,20 @@
 //! Integration tests with Postmark client
 
-#![cfg(feature = "postmark")]
+#![cfg(all(feature = "postmark", feature = "reqwest"))]
 
 mod app;
 #[path = "postmark/mod.rs"]
 mod postmark_tests;
 
 use reqwest::Client;
-use reqwest::redirect::Policy;
-use sendout::config::ServiceConfig;
 use sendout::postmark::PostmarkClient;
-use wiremock::MockServer;
 
 use app::TestApp;
 
-impl TestApp<PostmarkClient<Client>> {
+impl TestApp {
     /// Spawn new test application
-    async fn with_postmark() -> Result<Self, Box<dyn std::error::Error>> {
-        let email_server = MockServer::start().await;
-        let client = Client::builder().redirect(Policy::none()).build()?;
-        let config = ServiceConfig {
-            base_url: email_server.uri(),
-            server_token: String::from("test-server-token").into(),
-            account_token: Some(String::from("test-account-token").into()),
-            from_email: "test-user".into(),
-        };
-        let email_client = PostmarkClient::new(client, config.clone());
-
-        Ok(Self {
-            email_client,
-            email_server,
-            config,
-        })
+    fn postmark_client(&self) -> PostmarkClient<Client> {
+        let reqwest_client = Self::reqwest_client().expect("to create reqwest client");
+        PostmarkClient::new(reqwest_client, self.config.clone())
     }
 }

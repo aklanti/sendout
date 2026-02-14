@@ -8,7 +8,7 @@ use super::error::Error;
 
 /// Configuration for the email sending service
 #[must_use]
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct ServiceConfig {
     /// API endpoint for the email service
     pub base_url: String,

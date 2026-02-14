@@ -54,6 +54,7 @@ impl<C> PostmarkClient<C> {
             .method(R::METHOD)
             .uri(uri)
             .header("content-type", "application/json")
+            .header("accept", "application/json")
             .header(
                 Self::X_POSTMARK_SERVER,
                 self.config.server_token.expose_secret(),
