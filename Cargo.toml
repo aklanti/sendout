@@ -6,7 +6,7 @@ authors = ["Sede Soukossi"]
 description = "A library for sending emails from you application"
 license = "MPL-2.0"
 categories = ["email"]
-keywords = ["email", "mailer", "message"]
+keywords = ["email", "mailer", "message", "postmark"]
 repository = "https://github.com/aklanti/sendout"
 rust-version = "1.93.0"
 
