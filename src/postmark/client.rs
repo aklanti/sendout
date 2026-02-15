@@ -22,9 +22,9 @@ pub struct PostmarkClient<C> {
 
 impl<C> PostmarkClient<C> {
     /// Server header name
-    const X_POSTMARK_SERVER: &str = "X-POSTMARK-SERVER";
+    const X_POSTMARK_SERVER: &str = "X-Postmark-Server-Token";
     ///  Account header name
-    const X_POSTMARK_ACCOUNT: &str = "X-POSTMARK-ACCOUNT";
+    const X_POSTMARK_ACCOUNT: &str = "X-Postmark-Account-Token";
 
     /// Creates new [`PostmarkClient`] client
     pub const fn new(client: C, config: ServiceConfig) -> Self {
