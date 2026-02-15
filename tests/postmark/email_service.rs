@@ -1,7 +1,7 @@
 use googletest::matchers::eq;
 use googletest::{expect_that, gtest};
 use secrecy::ExposeSecret;
-use sendout::service::EmailService;
+use sendout::EmailService;
 use serde_json::{Value, json};
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, ResponseTemplate};

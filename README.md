@@ -30,8 +30,36 @@ It supports providers like Postmark and is designed for easy integration and rob
 ```toml
 [dependencies]
 sendout = "0.1"
-# Optional: enable Postmark support
-sendout = { version = "0.1", features = ["postmark"] }
+# Optional: enable Postmark and reqwest support
+sendout = { version = "0.1", features = ["postmark", "reqwest"] }
+```
+
+```rust
+use reqwest::Client;
+use sendout::email::EmailMessage;
+use sendout::EmailService;
+
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+  let email_message = EmailMessage {
+      from: "wangari.maathai@example.africa".to_owned(),
+      to: vec!["kwame.nkrumah@example.africa"].into(),
+      subject: "Green Belt Movement Monthly Update".to_owned(),
+      body: Body::Text("We planted 10,000 trees across Kenya this month.".to_owned()),
+  };
+
+  let config = ServiceConfig {
+    base_url: "https://example.africa".into(),
+    server_token: String::from("<SERVER_TOKEN>").into(),
+    account_token: Some("<ACCOUNT_TOKEN>").into(),
+    from_email: "test-user".into()
+  };
+
+  let reqwest_client = Client::new();
+  let postmark_client = PostmarkClient::new(client, config);
+  postmark_client.send_email(email_message).await?;
+}
 ```
 
 ## Optional Features
@@ -46,7 +74,8 @@ You can enable optional features to customize the crate for your needs:
 - `test-util` enables test utilities and mock sender for integration
 
 ## Supported Rust Versions
-TODO
+
+`sendout` MSRV is `1.93.0`
 
 ## License
 
