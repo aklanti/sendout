@@ -15,7 +15,9 @@
 ## Sendout
 
 `sendout` is a crate for sending emails via API-based providers, with a focus on strong type safety, validation, and extensibility.
-It supports providers like Postmark and is designed for easy integration and robust error handling. However, it will never implement privacy invasive features like open tracking for example. 
+It supports providers like Postmark and is designed for easy integration and robust error handling.
+
+It will never implement privacy invasive features like open tracking for example. 
 
 ## Usage
 
