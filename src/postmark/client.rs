@@ -22,9 +22,9 @@ pub struct PostmarkClient<C> {
 
 impl<C> PostmarkClient<C> {
     /// Server header name
-    const X_POSTMARK_SERVER: &str = "X-Postmark-Server-Token";
+    const X_POSTMARK_SERVER_TOKEN: &str = "X-Postmark-Server-Token";
     ///  Account header name
-    const X_POSTMARK_ACCOUNT: &str = "X-Postmark-Account-Token";
+    const X_POSTMARK_ACCOUNT_TOKEN: &str = "X-Postmark-Account-Token";
 
     /// Creates new [`PostmarkClient`] client
     pub const fn new(client: C, config: ServiceConfig) -> Self {
@@ -56,12 +56,15 @@ impl<C> PostmarkClient<C> {
             .header("content-type", "application/json")
             .header("accept", "application/json")
             .header(
-                Self::X_POSTMARK_SERVER,
+                Self::X_POSTMARK_SERVER_TOKEN,
                 self.config.server_token.expose_secret(),
             );
 
         if let Some(account_token) = &self.config.account_token {
-            request = request.header(Self::X_POSTMARK_ACCOUNT, account_token.expose_secret());
+            request = request.header(
+                Self::X_POSTMARK_ACCOUNT_TOKEN,
+                account_token.expose_secret(),
+            );
         }
 
         request.body(body).map_err(|err| {

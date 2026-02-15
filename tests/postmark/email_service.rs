@@ -17,7 +17,7 @@ async fn send_mail_succeeds() {
     Mock::given(method("POST"))
         .and(path("/email"))
         .and(header(
-            "X-POSTMARK-SERVER",
+            "X-Postmark-Server-Token",
             app.config.server_token.expose_secret(),
         ))
         .respond_with(ResponseTemplate::new(200).set_body_json(body))
