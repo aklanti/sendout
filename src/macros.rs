@@ -17,6 +17,7 @@ macro_rules! cfg_test {
         $(
             #[cfg(test)]
             #[cfg(feature = "test-util")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "test-util")))]
             $item
         )*
     }

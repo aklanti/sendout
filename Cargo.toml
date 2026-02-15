@@ -1,6 +1,6 @@
 [package]
 name = "sendout"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 authors = ["Sede Soukossi"]
 description = "A library for sending emails from you application"
@@ -11,7 +11,8 @@ repository = "https://github.com/aklanti/sendout"
 rust-version = "1.93.0"
 
 [package.metadata.docs.rs]
-features = ["postmark", "test-util", "tracing"]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 bon = ["dep:bon"]
