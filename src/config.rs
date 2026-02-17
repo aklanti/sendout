@@ -1,12 +1,11 @@
-//! Email sending configuration data
-
+//! Configuration for connecting to your email service provider
 use std::env::VarError;
 
 use secrecy::SecretString;
 
 use super::error::Error;
 
-/// Configuration for the email sending service
+/// Service provider configuration data
 #[must_use]
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct ServiceConfig {
@@ -14,28 +13,26 @@ pub struct ServiceConfig {
     pub base_url: String,
     /// Secret API token for authentication
     ///
-    /// This token is used when making API requests
-    /// When using Postmark, it corresponds to X-Postmark-Server-Token
+    /// Maps to the X-Postmark-Server-Token header in Postmark
     pub server_token: SecretString,
-    /// Token used for requests that require account level privileges
+    /// Token for requests that need account level privileges
     ///
-    /// For Postmark, it corresponds to X-Postmark-Account-Token
+    /// Maps to the X-Postmark-Account-Token header in Postmark
     pub account_token: Option<SecretString>,
     /// The verified sender email address
     ///
-    /// This email must be a sender verified by your email service provider
-    /// Emails will appears to come from this address
+    /// Make sure this email address is verified by your provider
     pub from_email: String,
 }
 
 impl ServiceConfig {
-    /// Account API token
+    /// Environment variable name for the account level API token
     pub const SENDOUT_ACCOUNT_TOKEN: &str = "SENDOUT_ACCOUNT_TOKEN";
-    /// Email service API
+    /// Environment variable for the provider's base URL
     pub const SENDOUT_BASE_URL: &str = "SENDOUT_BASE_URL";
-    /// Sender email address
+    /// Environment variable for the sender email address
     pub const SENDOUT_FROM_EMAIL: &str = "SENDOUT_FROM_EMAIL";
-    /// Server API token
+    /// Environment variable for the server API token
     pub const SENDOUT_SERVER_TOKEN: &str = "SENDOUT_SERVER_TOKEN";
 
     /// Creates [`ServiceConfig`] from environment variables

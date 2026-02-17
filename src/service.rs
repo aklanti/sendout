@@ -1,16 +1,13 @@
-//! Email service traits.
+//! Email service traits
 //!
-//! Defines core and extension traits for sending emails and related operations.
-
+//! Defines the main traits for the services a provider may support
 use async_trait::async_trait;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 use crate::error::Error;
 
-/// Trait for sending emails
-///
-/// This trait defines the mechanism for sending emails.
+/// Trait for sending an email with a provider
 #[async_trait]
 pub trait EmailService<Email, Response>: Send + Sync
 where
@@ -24,14 +21,14 @@ where
 cfg_test_util! {
     use std::sync::{Arc, Mutex};
 
-    /// A list to sent emails
+    /// A list of sent emails
     type Outbox<Email> = Arc<Mutex<Vec<Email>>>;
 
     /// Mock sender that records sent emails
     pub struct MockEmailSender<Email> {
         /// The error to return when failure is expected
         pub failure_error: Option<Error>,
-        /// Records sent emails
+        /// Records every email sent so you can assert on them
         pub outbox: Outbox<Email>,
     }
 

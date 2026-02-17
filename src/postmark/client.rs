@@ -1,5 +1,4 @@
-//! Postmark client
-
+//! The HTTP client that talks to the Postmark API
 use bytes::Bytes;
 use http::Request;
 use secrecy::ExposeSecret;
@@ -14,7 +13,7 @@ use crate::error::Error;
 /// Client for interacting with Postmark APIs
 #[derive(Debug)]
 pub struct PostmarkClient<C> {
-    /// Service configuration data
+    /// Service provider configuration
     pub config: ServiceConfig,
     /// HTTP Client
     pub client: C,
@@ -23,10 +22,10 @@ pub struct PostmarkClient<C> {
 impl<C> PostmarkClient<C> {
     /// Server header name
     const X_POSTMARK_SERVER_TOKEN: &str = "X-Postmark-Server-Token";
-    ///  Account header name
+    /// Account header name
     const X_POSTMARK_ACCOUNT_TOKEN: &str = "X-Postmark-Account-Token";
 
-    /// Creates new [`PostmarkClient`] client
+    /// Creates new [`PostmarkClient`] instance
     pub const fn new(client: C, config: ServiceConfig) -> Self {
         Self { client, config }
     }

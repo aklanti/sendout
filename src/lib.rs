@@ -1,8 +1,9 @@
 //! # Sendout
 //!
-//! A modular email delivery library.
+//! A flexible crate for sending emails across multiple providers.
 //!
-//! Provides core types and service traits for sending emails, batch operations, and provider integrations.
+//! Provides the building blocks - types, traits, and provider integrations for sending emails
+//! from your app.
 #![cfg_attr(docsrs, feature(doc_cfg))]
 pub mod config;
 pub mod error;

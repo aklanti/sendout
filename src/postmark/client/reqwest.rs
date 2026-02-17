@@ -1,4 +1,4 @@
-//! Implements services using reqwest::Client as client
+//! EmailService and Execute trait implementation for [`PostmarkClient<reqwest::Client>`]
 use async_trait::async_trait;
 use bytes::Bytes;
 use http::{Request, Response, StatusCode};

@@ -73,7 +73,7 @@ The minimum supported Rust version is **1.93.0**.
 
 ### License
 
-Unless otherwise noted, all components are licensed under the [Mozilla Public License Version 2.0.](LICENSE).
+Unless otherwise noted, this project is licensed under the [Mozilla Public License Version 2.0.](LICENSE).
 
 ### Contribution
 

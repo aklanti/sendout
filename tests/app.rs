@@ -16,7 +16,7 @@ pub struct TestApp {
 }
 
 impl TestApp {
-    /// Spawns new test application
+    /// Spawns a new test application
     pub async fn spawn() -> Self {
         let email_server = MockServer::start().await;
         let config = ServiceConfig {

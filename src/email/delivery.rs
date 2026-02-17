@@ -1,23 +1,22 @@
 //! Email sent responses data structures
-
 use bytes::Bytes;
 use http::Response;
 use serde::Deserialize;
 
 use crate::error::Error;
 
-/// Sent email response
+/// What the provider hands back after receiving an email
 #[derive(Debug, Clone, Deserialize)]
 pub struct EmailDelivery {
     /// Recipient email address
     pub to: String,
     /// Submission timestamp
     pub submitted_at: String,
-    /// ID of message
+    /// Unique ID assigned to this message by the provider
     pub message_id: String,
-    /// API error codes
+    /// API error code
     pub error_code: u16,
-    /// Response message
+    /// Human readable status message
     pub message: String,
 }
 

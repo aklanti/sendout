@@ -1,9 +1,6 @@
-//! Error module
+//! Error that can come up when sending a request to a service provider
 
-/// Errors that can occurs when using a service
-///
-/// It represents all possible failures that can occur when interacting
-/// with an email service.
+/// Errors that can occurs when talking a service provider
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
     /// Configuration error preventing the email from being sent out
@@ -17,9 +14,9 @@ pub enum Error {
     #[error("failed to send email: {0}")]
     SendFailed(String),
 
-    /// The email service rate limit has been exhausted
+    /// Rate limit hit when interacting with a service provider
     ///
-    /// This error occurs when too many requests are made in short period
+    /// Back off and retry after a bit
     #[error("rate limit exceeded")]
     RateLimitExceeded,
 

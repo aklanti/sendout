@@ -1,7 +1,7 @@
-//! This module defines various macros that enable specific code.
-// Theses macros are inspired by [tokio::macros::cfg](https://github.com/tokio-rs/tokio/blob/master/tokio/src/macros/cfg.rs)
+//! Internal macros for conditional compilation
+// These macros are inspired by [tokio::macros::cfg](https://github.com/tokio-rs/tokio/blob/master/tokio/src/macros/cfg.rs)
 
-/// Enables test specific code.
+/// Compiles the block only when the `test-util` feature is enabled
 macro_rules! cfg_test_util {
     ($($item: item)*)=> {
         $(
@@ -11,7 +11,7 @@ macro_rules! cfg_test_util {
     }
 }
 
-/// Enables test specific code.
+/// Compiles the block only when running tests that require the `test-util` feature
 macro_rules! cfg_test {
     ($($item: item)*)=> {
         $(

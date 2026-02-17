@@ -1,5 +1,4 @@
-//! Email data structure
-
+//! Core emails types: messages, recipients, attachments, and delivery receipt
 pub mod delivery;
 pub mod message;
 

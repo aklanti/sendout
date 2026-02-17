@@ -1,5 +1,4 @@
-//! Email data structure
-
+//! The message your build and hand off to a provider
 use std::collections::HashMap;
 
 #[cfg(feature = "garde")]
@@ -8,7 +7,7 @@ use serde::Serialize;
 use serde_with::formats::CommaSeparator;
 use serde_with::{StringWithSeparator, serde_as};
 
-/// EmailMessage for sending an email
+/// An email to be sent
 #[serde_as]
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize)]
@@ -24,21 +23,21 @@ pub struct EmailMessage {
     /// Email subject
     #[cfg_attr(feature = "garde", garde(skip))]
     pub subject: String,
-    /// Plain text email message
+    /// The email body
     #[cfg_attr(feature = "garde", garde(skip))]
     #[serde(flatten)]
     pub body: Body,
-    /// Cc recipient email address
+    /// Cc recipients
     #[cfg_attr(feature = "garde", garde(dive))]
     pub cc: Option<Recipients>,
-    /// Bcc recipient email address
+    /// Bcc recipients
     #[cfg_attr(feature = "garde", garde(dive))]
     pub bcc: Option<Recipients>,
     /// Email tag that allows you to categorize outgoing emails
     /// and get detailed statistics
     #[cfg_attr(feature = "garde", garde(length(graphemes, min = 1)))]
     pub tag: Option<String>,
-    /// Reply To override email address
+    /// Reply-To address override
     #[cfg_attr(feature = "garde", garde(dive))]
     pub reply_to: Option<Recipients>,
     /// List of custom headers to include
@@ -50,7 +49,7 @@ pub struct EmailMessage {
     /// List of attachments
     #[cfg_attr(feature = "garde", garde(dive))]
     pub attachments: Option<Vec<Attachment>>,
-    /// Set message stream ID that's used for sending
+    /// Message stream to send through
     #[cfg_attr(feature = "garde", garde(length(graphemes, min = 1)))]
     pub message_stream: Option<String>,
 }
@@ -64,7 +63,7 @@ pub enum Body {
     Html(String),
 }
 
-/// Custom Header
+/// A custom header to attach to the email
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "garde", derive(Validate))]
 pub struct Header {
@@ -76,7 +75,7 @@ pub struct Header {
     pub value: String,
 }
 
-/// Email recipients
+/// A list of recipients serialized as comma separated string
 #[serde_as]
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "garde", derive(Validate))]
@@ -88,7 +87,7 @@ pub struct Recipients(
 );
 
 impl Recipients {
-    /// Consumes self and return the inner list of email addresses
+    /// Consumes self and returns the inner list of email addresses
     pub fn into_inner(self) -> Vec<String> {
         self.0
     }
@@ -114,7 +113,7 @@ pub struct Attachment {
     #[cfg_attr(feature = "garde", garde(skip))]
     pub name: String,
     #[cfg_attr(feature = "garde", garde(skip))]
-    /// The content of the attached file
+    /// Base64-encoded file content
     pub content: String,
     /// The content type of the attached file
     #[cfg_attr(feature = "garde", garde(skip))]
