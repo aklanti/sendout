@@ -12,78 +12,68 @@
 [actions-badge]: https://github.com/aklanti/sendout/workflows/CI/badge.svg
 [actions-url]: https://github.com/aklanti/sendout/actions/workflows/main.yaml
 
-## Sendout
+# Sendout
 
-`sendout` is a crate for sending emails via API-based providers, with a focus on strong type safety, validation, and extensibility.
-It supports providers like Postmark and is designed for easy integration and robust error handling.
+Send emails from Rust through API-based providers like Postmark, with strong types and compile-time validation.
 
-It will never implement privacy invasive features like open tracking for example. 
+This crate will never include open tracking or other privacy-invasive features.
 
 ## Usage
 
-### Add to Your `Cargo.toml`
+Add `sendout` to your project:
 
 ```toml
 [dependencies]
-sendout = "0.1"
-# Optional: enable Postmark and reqwest support
-sendout = { version = "0.1", features = ["postmark", "reqwest"] }
+sendout = { version = "0.2", features = ["postmark", "reqwest"] }
 ```
+
+Then send an email:
 
 ```rust
 use reqwest::Client;
 use sendout::email::EmailMessage;
 use sendout::EmailService;
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-  let email_message = EmailMessage {
-      from: "wangari.maathai@example.africa".to_owned(),
-      to: vec!["kwame.nkrumah@example.africa"].into(),
-      subject: "Green Belt Movement Monthly Update".to_owned(),
-      body: Body::Text("We planted 10,000 trees across Kenya this month.".to_owned()),
-  };
+    let email_message = EmailMessage {
+        from: "wangari.maathai@example.africa".to_owned(),
+        to: vec!["kwame.nkrumah@example.africa"].into(),
+        subject: "Green Belt Movement Monthly Update".to_owned(),
+        body: Body::Text("We planted 10,000 trees across Kenya this month.".to_owned()),
+    };
 
-  let config = ServiceConfig {
-    base_url: "https://example.africa".into(),
-    server_token: String::from("<SERVER_TOKEN>").into(),
-    account_token: Some("<ACCOUNT_TOKEN>").into(),
-    from_email: "test-user".into()
-  };
+    let config = ServiceConfig {
+        base_url: "https://example.africa".into(),
+        server_token: String::from("<SERVER_TOKEN>").into(),
+        account_token: Some("<ACCOUNT_TOKEN>").into(),
+        from_email: "test-user".into(),
+    };
 
-  let reqwest_client = Client::new();
-  let postmark_client = PostmarkClient::new(client, config);
-  postmark_client.send_email(email_message).await?;
+    let reqwest_client = Client::new();
+    let postmark_client = PostmarkClient::new(client, config);
+    postmark_client.send_email(email_message).await?;
+
+    Ok(())
 }
 ```
 
 ## Optional Features
 
-You can enable optional features to customize the crate for your needs:
+- `postmark` - Postmark provider support
+- `reqwest` - reqwest as the HTTP backend
+- `bon` - builder pattern for messages
+- `garde` - validate fields like email format, lengths, and more
+- `tracing` - instrument calls with the `tracing` ecosystem
+- `test-util` - mock sender and helpers for testing
 
-- `bon` enables builder pattern
-- `garde` enables validation using the `garde` crate
-- `postmark` enables Postmark provider support
-- `reqwest` uses `reqwest` as the HTTP backend for sending requests
-- `tracing` enables tracing instrumentation
-- `test-util` enables test utilities and mock sender for integration
+ ### Supported Rust Versions
 
-## Design notes
+The minimum supported Rust version is **1.93.0**.
 
-- **Provider Abstraction:** Unified API for multiple email providers (e.g., Postmark).
-- **Strong Typing:** Compile-time validation for email fields, recipients, attachments, and headers.
-- **Extensible:** Add new providers or customize existing ones with minimal effort.
-- **Comprehensive Validation:** Uses [garde](https://github.com/jprochazk/garde) for field validation.
-- **Test Utilities:** Includes mock senders and a rich test suite.
+### License
 
-## Supported Rust Versions
-
-`sendout` MSRV is `1.93.0`
-
-## License
-
-This project is licensed under the [MPL-2.0 license](LICENSE).
+Unless otherwise noted, all components are licensed under the [Mozilla Public License Version 2.0.](LICENSE).
 
 ### Contribution
 
