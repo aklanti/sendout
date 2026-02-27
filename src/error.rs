@@ -26,6 +26,10 @@ pub enum Error {
     /// email service rejects the recipient for policy reasons.
     #[error("invalid recipient: {0}")]
     InvalidRecipient(String),
+
+    /// A file cannot be attached to an email
+    #[error("attachment error: {0}")]
+    AttachmentError(String),
 }
 
 #[cfg(feature = "reqwest")]

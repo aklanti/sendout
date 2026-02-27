@@ -90,6 +90,8 @@ pub struct PostmarkAttachment {
     pub content: String,
     /// MIME content type
     pub content_type: String,
+    /// Content ID
+    pub content_id: Option<String>,
 }
 
 impl ApiRequest for PostmarkEmailRequest {
@@ -121,6 +123,7 @@ impl From<Attachment> for PostmarkAttachment {
             name: attachment.name,
             content: attachment.content,
             content_type: attachment.content_type,
+            content_id: attachment.content_id,
         }
     }
 }
@@ -245,6 +248,7 @@ mod tests {
                 name: "file.pdf".to_owned(),
                 content: "base64data".to_owned(),
                 content_type: "application/pdf".to_owned(),
+                content_id: Some("ci:yeyi".to_owned()),
             }]),
             message_stream: Some("outbound".to_owned()),
         };
@@ -445,6 +449,7 @@ mod tests {
             content: "UEsDBBQAAAAIAA==".to_owned(),
             content_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 .to_owned(),
+            content_id: Some("ci:yeyi".to_owned()),
         };
         let json: Value = serde_json::to_value(&attachment).expect("serialization to succeed");
 
@@ -520,6 +525,7 @@ mod tests {
                 name: "manuscript-chapter-one.pdf".to_owned(),
                 content: "JVBERi0xLjQKJcfs".to_owned(),
                 content_type: "application/pdf".to_owned(),
+                content_id: Some("yeyi".to_owned()),
             }]),
             message_stream: Some("literary-submissions".to_owned()),
         };

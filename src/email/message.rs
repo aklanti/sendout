@@ -108,6 +108,7 @@ impl From<Vec<&str>> for Recipients {
 /// An attachment to the email
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "garde", derive(Validate))]
+#[cfg_attr(feature = "bon", derive(bon::Builder))]
 pub struct Attachment {
     /// Name of the attached file
     #[cfg_attr(feature = "garde", garde(skip))]
@@ -118,6 +119,10 @@ pub struct Attachment {
     /// The content type of the attached file
     #[cfg_attr(feature = "garde", garde(skip))]
     pub content_type: String,
+
+    /// The content identifier
+    #[cfg_attr(feature = "garde", garde(ascii, length(min = 1)))]
+    pub content_id: Option<String>,
 }
 
 #[cfg(test)]
@@ -217,6 +222,7 @@ mod tests {
                 name: "manuscript-chapter-one.pdf".to_owned(),
                 content: "JVBERi0xLjQKJcfs".to_owned(),
                 content_type: "application/pdf".to_owned(),
+                content_id: Some("ci:yeyi".to_owned()),
             }]),
             message_stream: Some("literary-submissions".to_owned()),
         };
@@ -332,6 +338,7 @@ mod tests {
             content: "UEsDBBQAAAAIAA==".to_owned(),
             content_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 .to_owned(),
+            content_id: Some("ci:yeyi".to_owned()),
         };
         let json: Value = serde_json::to_value(&attachment).expect("serialization to succeed");
 
@@ -483,6 +490,7 @@ mod tests {
                     name: "war-of-the-golden-stool.json".to_owned(),
                     content: "eyJyZXNpc3RhbmNlIjogIjE5MDAifQ==".to_owned(),
                     content_type: "application/json".to_owned(),
+                    content_id: Some("ci:africa".to_owned()),
                 }])
                 .message_stream("african-heritage".to_owned())
                 .build();
