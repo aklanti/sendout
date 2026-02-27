@@ -24,8 +24,10 @@ tracing = ["dep:tracing"]
 
 [dependencies]
 async-trait = "0.1"
+base64 = "0.22"
 bon = { version = "3.8", optional = true }
 bytes = "1"
+fs-err = "3.3.0"
 garde = { version = "0.22", optional = true, features = ["derive", "email", "unicode", "url"] }
 http = "1.4.0"
 reqwest = { version = "0.13.2", optional = true, features = ["json"] }

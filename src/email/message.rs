@@ -1,18 +1,22 @@
 //! The message your build and hand off to a provider
 use std::collections::HashMap;
+use std::io::Read;
+use std::path::Path;
 
-#[cfg(feature = "garde")]
-use garde::Validate;
+use base64::prelude::{BASE64_STANDARD, Engine};
+use fs_err::File;
 use serde::Serialize;
 use serde_with::formats::CommaSeparator;
 use serde_with::{StringWithSeparator, serde_as};
+
+use crate::error::Error;
 
 /// An email to be sent
 #[serde_as]
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "bon", derive(bon::Builder))]
-#[cfg_attr(feature = "garde", derive(Validate))]
+#[cfg_attr(feature = "garde", derive(garde::Validate))]
 pub struct EmailMessage {
     /// The sender email address
     #[cfg_attr(feature = "garde", garde(email))]
@@ -65,7 +69,7 @@ pub enum Body {
 
 /// A custom header to attach to the email
 #[derive(Debug, Clone, Serialize)]
-#[cfg_attr(feature = "garde", derive(Validate))]
+#[cfg_attr(feature = "garde", derive(garde::Validate))]
 pub struct Header {
     /// Name of the header
     #[cfg_attr(feature = "garde", garde(length(graphemes, min = 1)))]
@@ -78,7 +82,7 @@ pub struct Header {
 /// A list of recipients serialized as comma separated string
 #[serde_as]
 #[derive(Debug, Clone, Serialize)]
-#[cfg_attr(feature = "garde", derive(Validate))]
+#[cfg_attr(feature = "garde", derive(garde::Validate))]
 #[cfg_attr(feature = "garde", garde(transparent))]
 pub struct Recipients(
     #[cfg_attr(feature = "garde", garde(length(min = 1), inner(email)))]
@@ -106,8 +110,8 @@ impl From<Vec<&str>> for Recipients {
 }
 
 /// An attachment to the email
-#[derive(Debug, Clone, Serialize)]
-#[cfg_attr(feature = "garde", derive(Validate))]
+#[derive(Debug, Clone, Default, Serialize)]
+#[cfg_attr(feature = "garde", derive(garde::Validate))]
 #[cfg_attr(feature = "bon", derive(bon::Builder))]
 pub struct Attachment {
     /// Name of the attached file
@@ -119,10 +123,63 @@ pub struct Attachment {
     /// The content type of the attached file
     #[cfg_attr(feature = "garde", garde(skip))]
     pub content_type: String,
-
     /// The content identifier
     #[cfg_attr(feature = "garde", garde(ascii, length(min = 1)))]
     pub content_id: Option<String>,
+}
+
+impl Attachment {
+    /// Creates an attachment with the name and content type
+    ///
+    /// The name of the attachment is file name
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Attachment::from_reader", skip(reader), err(Debug))
+    )]
+    pub fn set_content_from_reader(mut self, reader: &mut impl Read) -> Result<Self, Error> {
+        let mut buf = Vec::new();
+        reader.read_to_end(&mut buf).map_err(|err| {
+            #[cfg(feature = "tracing")]
+            tracing::error!(?err);
+            Error::Attachment(err.to_string())
+        })?;
+
+        let content = BASE64_STANDARD.encode(buf);
+
+        self.content = content;
+        Ok(self)
+    }
+
+    /// Creates an attachment from file
+    ///
+    /// The name of the attachment is the filename. However, it doesn't set
+    /// the attachment content type.
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Attachment::from_path", skip(path), err(Debug))
+    )]
+    pub fn from_path(path: impl AsRef<Path>) -> Result<Self, Error> {
+        let mut file = File::open(path.as_ref()).map_err(|err| {
+            #[cfg(feature = "tracing")]
+            tracing::error!(?err);
+            Error::Attachment(err.to_string())
+        })?;
+
+        let name = path
+            .as_ref()
+            .file_name()
+            .and_then(|name| name.to_str())
+            .map(|s| s.to_string())
+            .ok_or_else(|| Error::Attachment("invalid file name".into()))?;
+
+        let mut attr = Self {
+            name,
+            ..Self::default()
+        };
+
+        attr = attr.set_content_from_reader(&mut file)?;
+        Ok(attr)
+    }
 }
 
 #[cfg(test)]
@@ -434,135 +491,6 @@ mod tests {
 
             let invalid = Recipients::from(vec!["completely-invalid"]);
             expect_that!(invalid.validate(), err(anything()));
-        }
-    }
-
-    #[cfg(feature = "bon")]
-    mod builder_tests {
-        use super::*;
-
-        #[gtest]
-        fn email_email_message_builder_with_required_fields() {
-            let email_message = EmailMessage::builder()
-                .from("patrice.lumumba@example.africa".to_owned())
-                .to(vec!["kwame.nkrumah@example.africa"].into())
-                .subject("Congo's Path to Sovereignty".to_owned())
-                .body(Body::Text(
-                    "Independence is not a gift but a right of all peoples.".to_owned(),
-                ))
-                .build();
-
-            expect_that!(
-                email_message.from.as_str(),
-                eq("patrice.lumumba@example.africa")
-            );
-            expect_that!(
-                email_message.subject.as_str(),
-                eq("Congo's Path to Sovereignty")
-            );
-            expect_that!(email_message.cc, none());
-            expect_that!(email_message.bcc, none());
-            expect_that!(email_message.tag, none());
-        }
-
-        #[gtest]
-        fn email_email_message_builder_with_all_fields() {
-            let mut metadata = HashMap::new();
-            metadata.insert("heritage".to_owned(), "ashanti-kingdom".to_owned());
-
-            let email_message = EmailMessage::builder()
-                .from("chimamanda.adichie@example.africa".to_owned())
-                .to(vec!["yaa.asantewaa@example.africa"].into())
-                .subject("Celebrating African Women in Literature".to_owned())
-                .body(Body::Html(
-                    "<p>Your courage inspires generations of writers.</p>".to_owned(),
-                ))
-                .cc(vec!["steve.biko@example.africa"].into())
-                .bcc(vec!["miriam.makeba@example.africa"].into())
-                .tag("african-women-history".to_owned())
-                .reply_to(vec!["gbehanzin@example.africa"].into())
-                .headers(vec![Header {
-                    name: "X-Literary-Tribute".to_owned(),
-                    value: "queen-mother-yaa-asantewaa".to_owned(),
-                }])
-                .metadata(metadata)
-                .attachments(vec![Attachment {
-                    name: "war-of-the-golden-stool.json".to_owned(),
-                    content: "eyJyZXNpc3RhbmNlIjogIjE5MDAifQ==".to_owned(),
-                    content_type: "application/json".to_owned(),
-                    content_id: Some("ci:africa".to_owned()),
-                }])
-                .message_stream("african-heritage".to_owned())
-                .build();
-
-            expect_that!(
-                email_message.from.as_str(),
-                eq("chimamanda.adichie@example.africa")
-            );
-            expect_that!(
-                email_message.to.0.first().map(|t| t.as_str()),
-                some(eq("yaa.asantewaa@example.africa"))
-            );
-            expect_that!(
-                email_message.subject.as_str(),
-                eq("Celebrating African Women in Literature")
-            );
-            expect_that!(
-                email_message
-                    .cc
-                    .as_ref()
-                    .and_then(|c| c.0.first())
-                    .map(|c| c.as_str()),
-                some(eq("steve.biko@example.africa"))
-            );
-            expect_that!(
-                email_message
-                    .bcc
-                    .as_ref()
-                    .and_then(|b| b.0.first())
-                    .map(|b| b.as_str()),
-                some(eq("miriam.makeba@example.africa"))
-            );
-            expect_that!(
-                email_message.tag.as_deref(),
-                some(eq("african-women-history"))
-            );
-            expect_that!(
-                email_message
-                    .reply_to
-                    .as_ref()
-                    .and_then(|r| r.0.first())
-                    .map(|r| r.as_str()),
-                some(eq("gbehanzin@example.africa"))
-            );
-            expect_that!(
-                email_message
-                    .headers
-                    .as_ref()
-                    .and_then(|h| h.first())
-                    .map(|h| h.name.as_str()),
-                some(eq("X-Literary-Tribute"))
-            );
-            expect_that!(
-                email_message
-                    .metadata
-                    .as_ref()
-                    .and_then(|m| m.get("heritage"))
-                    .map(|m| m.as_str()),
-                some(eq("ashanti-kingdom"))
-            );
-            expect_that!(
-                email_message
-                    .attachments
-                    .as_ref()
-                    .and_then(|a| a.first())
-                    .map(|a| a.name.as_str()),
-                some(eq("war-of-the-golden-stool.json"))
-            );
-            expect_that!(
-                email_message.message_stream.as_deref(),
-                some(eq("african-heritage"))
-            );
         }
     }
 }

@@ -29,7 +29,7 @@ pub enum Error {
 
     /// A file cannot be attached to an email
     #[error("attachment error: {0}")]
-    AttachmentError(String),
+    Attachment(String),
 }
 
 #[cfg(feature = "reqwest")]
