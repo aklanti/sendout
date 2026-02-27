@@ -54,9 +54,9 @@ alias t := test
 
 # Run tests
 @test *args:
-    cargo nextest run --all-targets -j 12 {{ args }}
-    cargo nextest run --features postmark --all-targets -j 12 {{ args }}
-    cargo nextest run --features garde --all-targets -j 12 {{ args }}
-    cargo nextest run --features bon --all-targets -j 12 {{ args }}
-    cargo nextest run --all-features --all-targets -j 12 {{ args }}
+    cargo nextest run -j 12 {{ args }}
+    cargo nextest run --features bon -j 12 {{ args }}
+    cargo nextest run --features garde -j 12 {{ args }}
+    cargo nextest run --features postmark -j 12 {{ args }}
+    cargo nextest run --all-features -j 12 {{ args }}
     cargo test --doc
